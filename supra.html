@@ -1,0 +1,2091 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>Supraland map</title>
+		<script
+		src="https://code.jquery.com/jquery-2.2.4.min.js"
+		integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
+		crossorigin="anonymous"></script>
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+	</head>
+	<body>
+		<script>
+			$(document).ready(function() {
+				init();
+				//загрузка истории
+				var globhist=getCookie('suprahist');
+				try {
+					globhist = JSON.parse(globhist);
+					//Если история есть заполняем группу история всеми элементами.
+					//console.log(globhist);
+					var tmplist=$('#tmplist');
+					
+					var tmpcnt=globhist.length;
+					for (var i=0;i<tmpcnt;i++){
+						var newid=globhist[i];
+						var newel=tmplist.html();
+						//у нас есть id - берем с маркеров на карте описания
+						newel = $($.parseHTML( jQuery.trim(newel.replace(/#text#/gi, $('#'+newid).attr('title')))));
+						newel.data('id',newid);
+						newel.append($('<span class="icondel"></span>'));
+						$('#flylist .autohist').append(newel);
+					}
+				}
+				catch(e) {
+					console.log(e); // error in the above string (in this case, yes)!
+					console.log('Данных истории в куках нет');
+					globhist=[];
+					
+				}				
+				
+				var mapcircle=0;
+				var maptarget=null;
+				var mapposx=null,mapposy=null;
+				var mapposcx=null,mapposcy=null;
+				function init(){
+					var countpta=pointsarr.length;
+					var group;
+					var gcnt;
+					for (i=0;i<countpta;i++){
+						group=pointsarr[i].Groups;
+						gcnt=group.length;
+						if (gcnt>0){
+							for (z=0;z<gcnt;z++){
+								//console.log(z);
+								placelisttext(group[z],pointsarr[i].Name,i)
+							}
+						}
+						placebtn(pointsarr[i].CoordX,pointsarr[i].CoordY,i,pointsarr[i].Name);
+						//console.log(pointsarr[i]);
+					}
+				}
+				function placelisttext(groupnum,text,numpoint,setActive=0){
+					var flylist=$('#flylist');
+					var tmplist=$('#tmplist');
+					var newel=tmplist.html();
+					newel = $.parseHTML( jQuery.trim(newel.replace(/#text#/gi, text+' ('+numpoint+')')));
+					newel=$(newel);
+					newel.data('id','mapoint'+numpoint);
+					if (setActive){newel.addClass('active');}
+					flylist.find('.list-group-item').eq(groupnum).append(newel);
+				}
+				function placebtn(x,y,num,tname,thide=1){
+					var tmpbtn=$('#tmpbtn');
+					var mainpic=$('#mainpic');
+					var newel=tmpbtn.html();
+					newel = $.parseHTML( jQuery.trim(newel.replace(/#number#/gi, num)));
+					$(newel).css({'left':x,'top':y})
+					$(newel).attr('id',  'mapoint'+num );
+					$(newel).attr('title',  tname );
+					if (thide){
+						$(newel).addClass('hide');
+					}
+					
+					mainpic.append(newel);
+				}
+				
+				$('#flylist > .container > h2').dblclick(function(event){
+					var curtext='',alton=0;
+					if (event.altKey){
+						//console.log('alt');
+						//собираем оставшиеся активные элементы
+						alton=1;
+					}
+					//массив соответствий группы и ид
+					var arrgroup={};
+					
+					var flylist;
+					flylist=$('#flylist .list-group-item:eq(0) .list-group-item-text');
+					flylist.each(function(){arrgroup[$(this).data('id')] = 0;});
+					
+					flylist=$('#flylist .list-group-item:eq(1) .list-group-item-text');
+					flylist.each(function(){arrgroup[$(this).data('id')] = 1;});
+					
+					flylist=$('#flylist .list-group-item:eq(2) .list-group-item-text');
+					flylist.each(function(){arrgroup[$(this).data('id')] = 2;});
+					
+					if (alton){
+						//попробовать не flylist на по порядку сдедования, попробовать сразу по маркерам пройтись
+						flylist=$('#mainpic .mycircle:not(.hide)');
+						flylist.each(function(){
+							//$('#mainpic .mycircle:not(.hide)').eq(0).get(0).id
+							var newid=this.id;
+							//var elemmap=$('#'+newid);
+							var elemmap=$(this);
+							
+							curtext=curtext+'{'+"\n";
+							curtext=curtext+"'Name':'"+elemmap.attr('title')+"',"+"\n";
+							curtext=curtext+"'CoordX':'"+elemmap.css('left')+"',"+"\n";
+							curtext=curtext+"'CoordY':'"+elemmap.css('top')+"',"+"\n";
+							curtext=curtext+"'Groups':'"+"["+arrgroup[newid]+"]',"+"\n";
+							curtext=curtext+'},'+"\n";
+						});
+					}
+					else
+					{
+						var tmpcnt=globhist.length;
+						for (var i=0;i<tmpcnt;i++){
+							var newid=globhist[i];
+							var elemmap=$('#'+newid);
+							//у нас есть id - берем с маркеров на карте описания
+							
+							curtext=curtext+'{'+"\n";
+							curtext=curtext+"'Name':'"+elemmap.attr('title')+"',"+"\n";
+							curtext=curtext+"'CoordX':'"+elemmap.css('left')+"',"+"\n";
+							curtext=curtext+"'CoordY':'"+elemmap.css('top')+"',"+"\n";
+							curtext=curtext+"'Groups':'"+"["+arrgroup[newid]+"]',"+"\n";
+							curtext=curtext+'},'+"\n";
+						}
+					}
+					curtext='var pointsarr=['+"\n"+curtext+']';
+					console.log(curtext);
+					navigator.clipboard.writeText(curtext);
+					return false;
+				});
+				
+				$('#mainpic').mousedown(function(event){
+					//console.log(event);
+					if (event.target.className.indexOf('mycircle')>=0){mapcircle=1;}
+					if (event.shiftKey && mapcircle==1){
+						//хотим изменить маркер
+						var result = prompt("Описание:", event.target.title);
+						// elemmap.attr('title')
+						if (result != null) {
+							event.target.title=result;
+						}
+					}
+					el=$(this);
+					el.addClass('active');
+					if (mapcircle==1){el=$(event.target);maptarget=el;}
+					//console.log('mousedown');
+					mapposx=parseInt(event.pageX);
+					mapposy=parseInt(event.pageY);
+					mapposcx=parseInt(el.css('left'));
+					mapposcy=parseInt(el.css('top'));
+					return false;
+				});
+				$('body').mouseup(function(event){
+					//console.log('mouseup');
+					$('#mainpic').removeClass('active');
+					
+					if (event.altKey && mapcircle==1){
+						var oldx,oldy;
+						if (mapposx!=null){
+							//запоминаем новые координаты
+							oldx=parseInt(maptarget.css('left'));
+							oldy=parseInt(maptarget.css('top'));
+							//возвращаем старые координаты
+							maptarget.css('left',mapposcx+'px');
+							maptarget.css('top',mapposcy+'px');
+						}
+						//хотим продублировать метку
+						var desc = prompt("Описание:", event.target.title);
+						var group = prompt("Номер группы:", 0);
+						// elemmap.attr('title')
+						if (desc != null && group != null ) {
+							//Новый номер
+							var numi=$('#mainpic .mycircle').length;
+							//надо ставить уже активный маркер
+							//Новый текст
+							placelisttext(group,desc,numi,1);
+							//Новая кнопка
+							placebtn(oldx,oldy,numi,desc,0);
+						}
+					}
+					
+					if (mapcircle==1){mapcircle=0;maptarget=null;}
+					mapposx=null;
+					return false;
+				});
+				$('#mainpic').mousemove(function(event){
+					if ($(this).hasClass('active')){
+						//console.log(event.offsetX);
+						//если это круг
+						if (mapcircle==1 ){
+							var mainpic=maptarget;
+						}
+						else
+						{
+							var mainpic=$('#mainpic');
+						}
+						if (mapposx!=null){
+							var cx=0;
+							var cy=0;
+							cx=mapposcx+(event.pageX-mapposx);
+							cy=mapposcy+(parseInt(event.pageY)-mapposy);
+							//console.log();
+							
+							mainpic.css('left',cx+'px');
+							mainpic.css('top',cy+'px');
+						}
+					}
+					return false;
+				});
+				$('#flylist').on('dblclick','.list-group-item-text',function(event){
+					var el=$(this);
+					//var par=el.parent();
+					var cce=$('#'+el.data('id'));
+					//+поправка на скролл
+					var btnx=cce.get(0).offsetLeft-window.pageXOffset;
+					var btny=cce.get(0).offsetTop-window.pageYOffset;
+					
+					var sx=screen.width;
+					var sy=screen.height;
+					var mainpic=$('#mainpic');
+					mainpic.css('left',sx/2-btnx+'px');
+					mainpic.css('top',sy/2-btny+'px');					
+				});
+				$('#mainpic').dblclick(function(event){
+					if (event.target.className.indexOf('mycircle')>=0){
+						//дабл клик по кругу - ищем его id в списке и тыкаем по иконке.
+						var newid=event.target.id;
+						var flylist;
+						flylist=$('#flylist .list-group-item .list-group-item-text');
+						console.log(newid);
+						flylist.each(function(){
+							if ($(this).data('id')==newid){
+								//нашли
+								$(this).find('.icon').trigger('click');
+							}
+						});
+					}
+					else
+					{
+						console.log('\'CoordX\'\:\''+event.offsetX+'px\'\,'+"\n"+'\'CoordY\'\:\''+event.offsetY+'px\'\,'+"\n");
+						navigator.clipboard.writeText('\'CoordX\'\:\''+event.offsetX+'px\'\,'+"\n"+'\'CoordY\'\:\''+event.offsetY+'px\'\,'+"\n");
+					}
+					return false;
+				});
+				
+				$('.list-group-item-heading .text').on('click',function(){
+					var el=$(this);
+					var par=el.parent().parent();
+					if (el.hasClass('closed')){
+						el.removeClass('closed');
+						//open
+						par.find('.list-group-item-text').removeClass('hide');
+					}
+					else{
+						el.addClass('closed');
+						//close
+						par.find('.list-group-item-text').addClass('hide');
+					}
+				});
+				$('#flylist').on('click','.list-group-item-text .icon',function(){
+					var el=$(this);
+					var par=el.parent();
+					if (par.hasClass('active')){
+						par.removeClass('active');
+						$('#'+par.data('id')).addClass('hide');
+						//off - add to history
+						if (!par.parent().hasClass('autohist'))
+						{
+							var dataid=par.data('id');
+							//Чтобы не было дублей
+							if (!globhist.includes(dataid)){
+								var newel=$($.parseHTML(jQuery.trim(par.get(0).outerHTML)));
+								newel.data('id',dataid);
+								newel.append($('<span class="icondel"></span>'));
+								$('#flylist .autohist').append(newel);
+								globhist.push(dataid);
+								//update history
+								setCookie('suprahist',JSON.stringify(globhist),{expires:60*60*24*30,path:'/'})
+							}
+						}
+						else
+						{
+							//it is history - unclick from other
+							var flylist=$('#flylist .list-group-item-text').not(par);
+							var parid=par.data('id');
+							flylist.each(function(){
+								if ($(this).data('id')==parid){
+									$(this).removeClass('active');
+								}
+							});
+						}
+					}
+					else
+					{
+						par.addClass('active');
+						$('#'+par.data('id')).removeClass('hide');
+						if (par.parent().hasClass('autohist')){
+							//it is history - unclick from other
+							var flylist=$('#flylist .list-group-item-text').not(par);
+							var parid=par.data('id');
+							flylist.each(function(){
+								if ($(this).data('id')==parid){
+									$(this).addClass('active');
+								}
+							});
+						}
+					}
+				});				
+				$('.list-group-item-text').hover(
+				function(){
+					var el=$(this);
+					$('#'+el.data('id')).addClass('highlight');
+				},
+				function(){
+					var el=$(this);
+					$('#'+el.data('id')).removeClass('highlight');
+				}
+				);
+				$('.mycircle').hover(
+				function(){
+					var el=$(this);
+					el.addClass('highlight');
+				},
+				function(){
+					var el=$(this);
+					el.removeClass('highlight');
+				}
+				);				
+				$('.btall').on('click',function(){
+					//active <all></all>
+					var par=$('.list-group');
+					var lhead=par.find('.list-group-item-heading').addClass('active');
+					var ltext=par.find('.list-group-item-text').addClass('active');
+					$('#mainpic .mycircle').removeClass('hide');
+				});
+				$('.list-group-item-heading .icon').on('click',function(){
+					var el=$(this);
+					var par=el.parent();
+					var hist=par.parent().hasClass('autohist');
+					var histids=[];
+					
+					var els=par.parent().find('.list-group-item-text');
+					var act=els.filter('.active').length;
+					var typeactive;
+					
+					if (els.length==act){
+						typeactive=1;
+						
+						//выбраны все - обнуляем
+						par.removeClass('active');
+						els.removeClass('active');
+						//обнуляем кружки, нужно обнулять только группу
+						els.each(function(){
+							tel=$(this);
+							$('#'+tel.data('id')).addClass('hide');
+							//запоминаем для истории
+							if (hist){
+								histids.push(tel.data('id'));
+							}
+						});
+					}
+					else{
+						typeactive=0;
+						
+						par.addClass('active');
+						if (act==0){
+							//вообще не выбраны - заполняем все
+							els.addClass('active');
+						}
+						else
+						{
+							//выбраны не все - заполняем все
+							els.addClass('active');
+						}
+						//заполняем кружки, нужно отображать только группу
+						els.each(function(){
+							tel=$(this);
+							$('#'+tel.data('id')).removeClass('hide');
+							//запоминаем для истории
+							if (hist){
+								histids.push(tel.data('id'));
+							}						
+						});
+					}
+					
+					//if it history - activate/remove other list items and our
+					if (hist){
+						//console.log(histids);
+						var flylist=$('#flylist .list-group-item-text');
+						
+						if (typeactive){
+							flylist=flylist.filter('.active');
+							//деактивируем
+							flylist.each(function(){
+								if(jQuery.inArray($(this).data('id'), histids) !== -1){
+									$(this).removeClass('active');
+								}
+							});
+						}
+						else
+						{
+							flylist=flylist.not('.active');
+							//активируем
+							flylist.each(function(){
+								if(jQuery.inArray($(this).data('id'), histids) !== -1){
+									$(this).addClass('active');
+								}
+							});
+						}
+					}
+				});
+				$('#flylist').on('click','.list-group-item-text .icondel',function(){
+					//delete from history
+					var par=$(this).parent();
+					var dataid=par.data('id');
+					par.remove();
+					//Проверка
+					if (globhist.includes(dataid)){
+						var tmpindex = globhist.indexOf(dataid);
+						if (tmpindex > -1) {
+							globhist.splice(tmpindex, 1);
+						}
+						//update history
+						setCookie('suprahist',JSON.stringify(globhist),{expires:60*60*24*30,path:'/'})
+					}
+				});
+				$('.helpp > div > h2').on('click',function(){
+					$(this).next().toggleClass('hide');
+				});
+				
+				//работа с куками
+				function getCookie(name) {
+					var matches = document.cookie.match(new RegExp(
+					"(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
+					));
+					if (!matches){
+						matches=[];
+						matches[1]=localStorage.getItem('suprahist');
+						//matches[1]=LocalStorage.getItem(name);
+						//%5B%22mapoint7%22%2C%22mapoint6%22%2C%22mapoint66%22%2C%22mapoint8%22%2C%22mapoint4%22%2C%22mapoint5%22%2C%22mapoint11%22%2C%22mapoint12%22%2C%22mapoint99%22%2C%22mapoint13%22%2C%22mapoint14%22%2C%22mapoint27%22%2C%22mapoint15%22%5D
+						//[\"mapoint7\",\"mapoint6\",\"mapoint66\",\"mapoint8\",\"mapoint4\",\"mapoint5\",\"mapoint11\",\"mapoint12\",\"mapoint99\",\"mapoint13\",\"mapoint14\",\"mapoint27\",\"mapoint15\"]"
+					}
+					ret=matches ? decodeURIComponent(matches[1]) : undefined;
+					
+					return ret;
+				}	
+				function setCookie(name, value, options) {
+					options = options || {};
+					
+					var expires = options.expires;
+					
+					if (typeof expires == "number" && expires) {
+						var d = new Date();
+						d.setTime(d.getTime() + expires * 1000);
+						expires = options.expires = d;
+					}
+					if (expires && expires.toUTCString) {
+						options.expires = expires.toUTCString();
+					}
+					
+					value = encodeURIComponent(value);
+					
+					var updatedCookie = name + "=" + value;
+					
+					for (var propName in options) {
+						updatedCookie += "; " + propName;
+						var propValue = options[propName];
+						if (propValue !== true) {
+							updatedCookie += "=" + propValue;
+						}
+					}
+					
+					document.cookie = updatedCookie;
+					localStorage.setItem(name, value);
+				}
+				function deleteCookie(name) {
+					setCookie(name, "", {
+						expires: -1
+					})
+				}	
+				//работа с куками
+			});
+			
+		</script>
+		<style>
+			body{
+			overflow: hidden;
+			}
+			.btall{
+			display: inline-block;
+			padding: .75rem 1.25rem;
+			background-color: #fff;
+			border: 1px solid rgba(0,0,0,.125);
+			cursor: pointer;
+			}
+			.dib{
+			display: inline-block;
+			}
+			.w50p{
+			width: 50%;
+			}
+			#flylist{
+			position: fixed;
+			top: 0;
+			left: 0;
+			}
+			body .hide{
+			display: none;
+			}
+			#mainpic{
+			cursor: grab;
+			position: relative;
+			}
+			#mainpic.active{
+			cursor: grabbing;
+			}
+			.mycircle{
+			display: inline-block;
+			width: 30px;
+			height: 30px;
+			width: 20px;
+			height: 20px;
+			line-height: 24px;
+			line-height: 16px;
+			font-size: 10px;
+			background: #167CE1;
+			background: -moz-radial-gradient(center, #167CE1 0%, #0073E6 50%, #005CB6 100%);
+			background: -webkit-radial-gradient(center, #167CE1 0%, #0073E6 50%, #005CB6 100%);
+			background: radial-gradient(ellipse at center, #167CE1 0%, #0073E6 50%, #005CB6 100%);
+			position: absolute;
+			border: 1px solid #d72513;
+			-webkit-border-radius: 50%;
+			-moz-border-radius: 50%;
+			border-radius: 50%;
+			text-align: center;
+			-webkit-box-shadow: inset 0px 0px 6px 1px #d72513; 
+			box-shadow: inset 0px 0px 6px 1px #d72513;
+			color: #fff;
+			}
+			.mycircle.highlight{
+			z-index: 10;
+			}
+			.list-group{
+			max-height: 800px;
+			overflow: auto;
+			}
+			.list-group-item-text .icon,
+			.list-group-item-heading .icon
+			{
+			display: inline-block;
+			width: 12px;
+			height: 12px;
+			border: 1px solid #000;
+			vertical-align: baseline;
+			-webkit-border-radius: 50%;
+			-moz-border-radius: 50%;
+			border-radius: 50%;
+			cursor: pointer;
+			}
+			.active .icon{
+			background: rgb(194,192,17);
+			background: radial-gradient(circle, rgba(194,192,17,1) 29%, rgba(1,112,152,0.75672275746236) 74%, rgba(0,39,255,0.437395026369923) 100%);
+			}
+			.icondel{
+			background: url('data:image/svg+xml;charset=UTF-8,<svg height="1000" width="875" xmlns="http://www.w3.org/2000/svg"><path d="M0 281.296l0 -68.355q1.953 -37.107 29.295 -62.496t64.449 -25.389l93.744 0l0 -31.248q0 -39.06 27.342 -66.402t66.402 -27.342l312.48 0q39.06 0 66.402 27.342t27.342 66.402l0 31.248l93.744 0q37.107 0 64.449 25.389t29.295 62.496l0 68.355q0 25.389 -18.553 43.943t-43.943 18.553l0 531.216q0 52.731 -36.13 88.862t-88.862 36.13l-499.968 0q-52.731 0 -88.862 -36.13t-36.13 -88.862l0 -531.216q-25.389 0 -43.943 -18.553t-18.553 -43.943zm62.496 0l749.952 0l0 -62.496q0 -13.671 -8.789 -22.46t-22.46 -8.789l-687.456 0q-13.671 0 -22.46 8.789t-8.789 22.46l0 62.496zm62.496 593.712q0 25.389 18.553 43.943t43.943 18.553l499.968 0q25.389 0 43.943 -18.553t18.553 -43.943l0 -531.216l-624.96 0l0 531.216zm62.496 -31.248l0 -406.224q0 -13.671 8.789 -22.46t22.46 -8.789l62.496 0q13.671 0 22.46 8.789t8.789 22.46l0 406.224q0 13.671 -8.789 22.46t-22.46 8.789l-62.496 0q-13.671 0 -22.46 -8.789t-8.789 -22.46zm31.248 0l62.496 0l0 -406.224l-62.496 0l0 406.224zm31.248 -718.704l374.976 0l0 -31.248q0 -13.671 -8.789 -22.46t-22.46 -8.789l-312.48 0q-13.671 0 -22.46 8.789t-8.789 22.46l0 31.248zm124.992 718.704l0 -406.224q0 -13.671 8.789 -22.46t22.46 -8.789l62.496 0q13.671 0 22.46 8.789t8.789 22.46l0 406.224q0 13.671 -8.789 22.46t-22.46 8.789l-62.496 0q-13.671 0 -22.46 -8.789t-8.789 -22.46zm31.248 0l62.496 0l0 -406.224l-62.496 0l0 406.224zm156.24 0l0 -406.224q0 -13.671 8.789 -22.46t22.46 -8.789l62.496 0q13.671 0 22.46 8.789t8.789 22.46l0 406.224q0 13.671 -8.789 22.46t-22.46 8.789l-62.496 0q-13.671 0 -22.46 -8.789t-8.789 -22.46zm31.248 0l62.496 0l0 -406.224l-62.496 0l0 406.224z"/></svg>') no-repeat 50% 50%;
+			background-size: 100%;
+			display: inline-block;
+			width: 14px;
+			height: 24px;
+			vertical-align: bottom;
+			cursor: pointer;
+			}
+			.helpp {
+			position: absolute;
+			top: 0;
+			right: 0;
+			z-index: 1;
+			}
+			.helpp > div > h2{
+			float: right;
+			cursor: pointer;
+			}
+		</style>
+		<div class="helpp">
+			<div class="container">
+				<h2>Справка</h2>
+				<div class="list-group hide">
+					<div href="#" class="list-group-item">
+						<p class="list-group-item-text">
+							Есть карта и слева группы, карту можно перемещать<br>
+							при клике на названии группы, список этой группы раскрывается<br>
+							клик по глазку на элементе списка показывает/скрывает его на карте, а также активирует/деактивирует сам глазок<br>
+							клик по глазку на названии группы активирует/деактивирует сам глазок, подэлементы, а также показывает/скрывает их на карте<br>
+							двойной щелчок по элементу - центрирует его на карте<br>
+							двойной щелчок по любому месту на карте выводит его координаты в консоль и копирует их в буффер обмена (служебное)<br>
+							<br>
+							Новая группа "история":<br>
+							Добавляются в неё те элементы которые были деактивированы по глазку на элементе(не на группе).<br>
+							Новые элементы обладают теми же функциями что и обыные, но в довесок при активации/деактивации элемента он не только переключает маркеры на карте и свой глазок,<br>
+							но и находит в других группах такой же глазок (с тем же описанием, номером, координатами) и тоже переключает его.<br>
+							Также элементы истории можно удалять.<br>
+							<br>
+							При наведении курсора мыши на название элемента, на карте он становится на передний план.<br>
+							При наведении курсора мыши на маркер на карте, он становится на передний план.<br>
+							<br>
+							Также есть кнопка включить всё - включает все элементы которые видит и маркеры тоже.<br>
+							По двойному клику по надписи "группы" копируется массив истории чтобы можно было заменить им уже имеющийся<br>
+							т.к. в истории хранятся только порядковые номера (id) маркеров на карте информация берется из маркеров на карте, номера групп берутся из списков которые соответстуют id на карте.<br>
+							<br>
+							Если нажать alt при клике, в буффер обмена копируются текущие элементы групп, но только активные, чтобы заменить текущий массив (для отслеживания прогресса),<br>
+							в частности тоже берет ид маркеров за основу для сбора информации, т.к. там нет номеров и прочего<br>
+							<br>
+							Маркеры на карте тоже можно передвигать также как и карту, а с зажатой клавишей shift - можно редактировать описание которое будет отображаться при копировании истории.<br>
+							Маркеры на карте можно выключать двойным кликом по ним, при этом срабатывает триггер как если бы выключал бы индивидуально глазок.<br>
+							Маркеры на карте можно передвигать с зажатым alt - тогда создается копия метки.<br>
+							<br>
+							История сохраняется в куки но иногда куки не работают, поэтому теперь история также сохраняется в localStorage<br>
+							<br>
+							Порядок работы примерно следующий: нажимаем кнопку включить всё, по мере прохождения игры отключаем собранные точки индивидуально, а в истории запоминается наш путь.
+						</p>
+					</div>
+				</div>
+			</div>			
+		</div>
+		<div id="mainpic" class="dib">
+			<img src="bgmap.jpg" alt="">
+		</div>
+		<div id="flylist">
+			<div class="container">
+				<h2>Группы</h2>
+				<div class="list-group">
+					<div class="btall">Включить всё</div>
+					<div href="#" class="list-group-item">
+						<h4 class="list-group-item-heading"><span class="icon"></span><span class="text">&nbsp;Совсем не важные</span></h4>
+					</div>
+					<div href="#" class="list-group-item">
+						<h4 class="list-group-item-heading"><span class="icon"></span><span class="text">&nbsp;Только важные</span></h4>
+					</div>
+					<div href="#" class="list-group-item">
+						<h4 class="list-group-item-heading"><span class="icon"></span><span class="text">&nbsp;Не сильно важные элементы</span></h4>
+					</div>
+					<div href="#" class="list-group-item autohist">
+						<h4 class="list-group-item-heading"><span class="icon"></span><span class="text">&nbsp;История</span></h4>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- образец для элемента текста -->
+		<div id="tmplist" class="hide">
+			<p class="list-group-item-text">
+				<span class="icon"></span>
+				#text#
+			</p>
+		</div>
+		<div id="tmpbtn" class="hide">
+			<div class="mycircle">
+				#number#
+			</div>
+		</div>
+	</body>
+</html>	
+<script>
+		var pointsarr=[	
+		{
+		'Name':'в тоннеле над трубой, просто монеты',
+		'CoordX':'628px',
+		'CoordY':'1319px',
+		'Groups':[2],
+		},
+		{
+		'Name':'Максимум здоровья +5 (в колодце, в трубе)',
+		'CoordX':'640px',
+		'CoordY':'1313px',
+		'Groups':[0],
+		},
+		{
+		'Name':'Максимум здоровья +10 (напиток из листьев)',
+		'CoordX':'442px',
+		'CoordY':'1374px',
+		'Groups':[2],
+		},
+		{
+		'Name':'Максимум здоровья +5 (под дворцом, под полом)',
+		'CoordX':'420px',
+		'CoordY':'1362px',
+		'Groups':[0],
+		},
+		
+		{
+		'Name':'Регенерация здоровья вприципе, бочка, дом рядом с пред.',
+		'CoordX':'393px',
+		'CoordY':'1352px',
+		'Groups':[1],
+		},
+		{
+		'Name':'Здоровье врага (дом с таймером, там где надо проскочить на скорость в дверь)',
+		'CoordX':'467px',
+		'CoordY':'1329px',
+		'Groups':[2],
+		},
+		{
+		'Name':'Силовой куб',
+		'CoordX':'560px',
+		'CoordY':'1318px',
+		'Groups':[1],
+		},
+		{
+		'Name':'Просто монеты, где морковка, залезаем с кубом',
+		'CoordX':'579px',
+		'CoordY':'1271px',
+		'Groups':[2],
+		},
+		{
+		'Name':'Радиус атаки мечом + 25% (дом с проводом)',
+		'CoordX':'451px',
+		'CoordY':'1352px',
+		'Groups':[2],
+		},
+		
+		{
+		'Name':'Максимум монет x2, у торговца',
+		'CoordX':'456px',
+		'CoordY':'1344px',
+		'Groups':[1],
+		},			
+		{
+		'Name':'Максимум здоровья +15',
+		'CoordX':'556px',
+		'CoordY':'1302px',
+		'Groups':[1],
+		},			
+		{
+		'Name':'Двойной прыжок',
+		'CoordX':'555px',
+		'CoordY':'1257px',
+		'Groups':[1],
+		},
+		
+		{
+		'Name':'Добыча - враги оставляют после себя монеты',
+		'CoordX':'611px',
+		'CoordY':'1176px',
+		'Groups':[1],
+		},
+		{
+		'Name':'Урон мечом +1 (под переключателем ворот)',
+		'CoordX':'651px',
+		'CoordY':'1215px',
+		'Groups':[0],
+		},
+		{
+		'Name':'Регенерация здоровья +5',
+		'CoordX':'664px',
+		'CoordY':'1204px',
+		'Groups':[0],
+		},
+		{
+		'Name':'Крит. урон мечом 5% (направо от входа, в скале)',
+		'CoordX':'698px',
+		'CoordY':'1229px',
+		'Groups':[0],
+		},
+		{
+		'Name':'Урон мечом +1 (налево от входа, наверху где железки)',
+		'CoordX':'697px',
+		'CoordY':'1187px',
+		'Groups':[0],
+		},
+		{
+		'Name':'Просто монеты, точка с кубом',
+		'CoordX':'692px',
+		'CoordY':'1157px',
+		'Groups':[0],
+		},
+		{
+		'Name':'Урон мечом +2, 1-ый уровень',
+		'CoordX':'568px',
+		'CoordY':'1277px',
+		'Groups':[0],
+		},
+		{
+		'Name':'Максимум здоровья +5 (секретная область на задворках)',
+		'CoordX':'409px',
+		'CoordY':'1222px',
+		'Groups':[0],
+		},
+		{
+		'Name':'Полоска здоровья',
+		'CoordX':'778px',
+		'CoordY':'1100px',
+		'Groups':[1],
+		},
+		{
+		'Name':'Крит. урон мечом 5%, в скале где снизу стекло, телепорт',
+		'CoordX':'580px',
+		'CoordY':'1305px',
+		'Groups':[0],
+		},
+		{
+		'Name':'Тройной прыжок',
+		'CoordX':'465px',
+		'CoordY':'1232px',
+		'Groups':[1],
+		},
+		{
+		'Name':'Урон мечом +1, у торговца',
+		'CoordX':'434px',
+		'CoordY':'1344px',
+		'Groups':[1],
+		},
+		{
+		'Name':'Максимум монет x2, у npc',
+		'CoordX':'722px',
+		'CoordY':'1027px',
+		'Groups':[1],
+		},			
+		{
+		'Name':'Броня',
+		'CoordX':'617px',
+		'CoordY':'997px',
+		'Groups':[1],
+		},
+		{
+		'Name':'Скорость регенерации x2 (у хайзенберга)',
+		'CoordX':'522px',
+		'CoordY':'1016px',
+		'Groups':[1],
+		},
+		{
+		'Name':'Святой меч',
+		'CoordX':'556px',
+		'CoordY':'1058px',
+		'Groups':[1],
+		},
+		
+		{
+		'Name':'Красная луна, прыжок на кактусе',
+		'CoordX':'486px',
+		'CoordY':'833px',
+		'Groups':[2],
+		},
+		{
+		'Name':'Урон мечом +1 (плато)',
+		'CoordX':'463px',
+		'CoordY':'907px',
+		'Groups':[0],
+		},
+		{
+		'Name':'Максимум монет x 2',
+		'CoordX':'456px',
+		'CoordY':'1079px',
+		'Groups':[1],
+		},
+		
+		{
+		'Name':'Максимум здоровья +1 (на скале, рядом с будкой)',
+		'CoordX':'669px',
+		'CoordY':'983px',
+		'Groups':[0],
+		},
+		{
+		'Name':'Максимум здоровья +2 (почти на последнем этаже, сбоку)',
+		'CoordX':'608px',
+		'CoordY':'964px',
+		'Groups':[0],
+		},
+		{
+		'Name':'Урон мечом +1 (в дер. клетке)',
+		'CoordX':'528px',
+		'CoordY':'1029px',
+		'Groups':[0],
+		},
+		{
+		'Name':'Максимум здоровья +5 (под артефактом)',
+		'CoordX':'585px',
+		'CoordY':'992px',
+		'Groups':[0],
+		},
+		{
+		'Name':'Урон пушки +5, за ракушки (их можно собрать сразу)',
+		'CoordX':'815px',
+		'CoordY':'1115px',
+		'Groups':[0],
+		},
+		
+		{
+		'Name':'Мегамакгаффин',
+		'CoordX':'562px',
+		'CoordY':'969px',
+		'Groups':[1],
+		},
+		{
+		'Name':'Урон мечом +1 (проход через линейку)',
+		'CoordX':'572px',
+		'CoordY':'927px',
+		'Groups':[0],
+		},
+		{
+		'Name':'Максимум здоровья +5, где ракушка за железной дверью',
+		'CoordX':'573px',
+		'CoordY':'1025px',
+		'Groups':[0],
+		},
+		{
+		'Name':'урон пушки +5, за 6 ракушек',
+		'CoordX':'591px',
+		'CoordY':'942px',
+		'Groups':[1],
+		},
+		{
+		'Name':'Урон мечом +2 (пик)',
+		'CoordX':'488px',
+		'CoordY':'1086px',
+		'Groups':[0],
+		},
+		{
+		'Name':'Регенерация здоровья +5 (где балка)',
+		'CoordX':'394px',
+		'CoordY':'1160px',
+		'Groups':[0],
+		},
+		{
+		'Name':'Просто монеты, в скале проход',
+		'CoordX':'1083px',
+		'CoordY':'1369px',
+		'Groups':[0],
+		},				
+		{
+		'Name':'Крутометр, у торговца',
+		'CoordX':'994px',
+		'CoordY':'1312px',
+		'Groups':[1],
+		},			
+		{
+		'Name':'Максимум монет x1,5, у торговца',
+		'CoordX':'994px',
+		'CoordY':'1312px',
+		'Groups':[1],
+		},			
+		{
+		'Name':'Крит пушки +5%, у торговца',
+		'CoordX':'994px',
+		'CoordY':'1312px',
+		'Groups':[1],
+		},			
+		{
+		'Name':'Крит мечом +5%, у торговца',
+		'CoordX':'994px',
+		'CoordY':'1312px',
+		'Groups':[1],
+		},			
+		{
+		'Name':'Максимум здоровья +5, у торговца',
+		'CoordX':'994px',
+		'CoordY':'1312px',
+		'Groups':[1],
+		},			
+		{
+		'Name':'Фрукты исцеляют на 20',
+		'CoordX':'996px',
+		'CoordY':'1359px',
+		'Groups':[1],
+		},
+		{
+		'Name':'Просто монеты, под землей',
+		'CoordX':'1001px',
+		'CoordY':'1347px',
+		'Groups':[0],
+		},				
+		{
+		'Name':'Просто монеты, в скале проход, нужен куб',
+		'CoordX':'1000px',
+		'CoordY':'1640px',
+		'Groups':[0],
+		},				
+		{
+		'Name':'Крит. урон пушки 5%, у торговца',
+		'CoordX':'839px',
+		'CoordY':'1553px',
+		'Groups':[0],
+		},				
+		{
+		'Name':'Максимум монет x1,5, у торговца',
+		'CoordX':'766px',
+		'CoordY':'1682px',
+		'Groups':[1],
+		},				
+		{
+		'Name':'Скорость перезарядки пушки *2, у торговца',
+		'CoordX':'766px',
+		'CoordY':'1682px',
+		'Groups':[2],
+		},				
+		{
+		'Name':'Урон пушки +5, в палатке',
+		'CoordX':'752px',
+		'CoordY':'1773px',
+		'Groups':[2],
+		},
+		{
+		'Name':'Скорость перезарядки пушки +66%, для торговца, бочка, в палатке',
+		'CoordX':'750px',
+		'CoordY':'1753px',
+		'Groups':[2],
+		},
+		{
+		'Name':'Бочка, скорость перезарядки пушки *2, для торговца',
+		'CoordX':'768px',
+		'CoordY':'1813px',
+		'Groups':[2],
+		},
+		{
+		'Name':'Бочка, урон мечом +3, для торговца',
+		'CoordX':'736px',
+		'CoordY':'1672px',
+		'Groups':[0],
+		},				
+		{
+		'Name':'Урон мечом +2 (наверху в будке)',
+		'CoordX':'735px',
+		'CoordY':'1741px',
+		'Groups':[0],
+		},
+		{
+		'Name':'Ботинки обрушения',
+		'CoordX':'671px',
+		'CoordY':'1800px',
+		'Groups':[1],
+		},
+		{
+		'Name':'Урон пушки +1',
+		'CoordX':'702px',
+		'CoordY':'1866px',
+		'Groups':[0],
+		},				
+		{
+		'Name':'Просто монеты',
+		'CoordX':'702px',
+		'CoordY':'1783px',
+		'Groups':[0],
+		},				
+		{
+		'Name':'Максимум здоровья +5, за решеткой внизу',
+		'CoordX':'578px',
+		'CoordY':'1794px',
+		'Groups':[0],
+		},
+		
+		{
+		'Name':'Красная луна',
+		'CoordX':'648px',
+		'CoordY':'1726px',
+		'Groups':[2],
+		},
+		{
+		'Name':'Просто монеты, у хайзенберга',
+		'CoordX':'601px',
+		'CoordY':'1876px',
+		'Groups':[0],
+		},				
+		{
+		'Name':'Бочка, урон пушки +15, для торговца',
+		'CoordX':'648px',
+		'CoordY':'1574px',
+		'Groups':[2],
+		},				
+		{
+		'Name':'Разрушитель щитов',
+		'CoordX':'407px',
+		'CoordY':'1594px',
+		'Groups':[1],
+		},
+		{
+		'Name':'Радиус обрушения +50 см',
+		'CoordX':'688px',
+		'CoordY':'1393px',
+		'Groups':[0],
+		},
+		{
+		'Name':'Урон пушки +5',
+		'CoordX':'736px',
+		'CoordY':'1349px',
+		'Groups':[2],
+		},				
+		{
+		'Name':'Крит. урон мечом 5% (колодец, где разрыв трубы)',
+		'CoordX':'692px',
+		'CoordY':'1368px',
+		'Groups':[0],
+		},
+		{
+		'Name':'Просто монеты',
+		'CoordX':'686px',
+		'CoordY':'1356px',
+		'Groups':[0],
+		},
+		{
+		'Name':'Просто монеты, в скале от футбольного поля',
+		'CoordX':'787px',
+		'CoordY':'836px',
+		'Groups':'[0]',
+		},
+		
+		{
+		'Name':'Урон пушки +5, сложно, лучше поберечь невры',
+		'CoordX':'665px',
+		'CoordY':'1021px',
+		'Groups':'[0]',
+		},
+		
+		{
+		'Name':'Крит. урон мечом 5%, кладбище',
+		'CoordX':'789px',
+		'CoordY':'1110px',
+		'Groups':'[0]',
+		},
+		
+		{
+		'Name':'Крит. урон пушки 5%, на 2-ом этаже',
+		'CoordX':'676px',
+		'CoordY':'1194px',
+		'Groups':'[0]',
+		},
+		
+		{
+		'Name':'Скорость перезарядки пушки +66%, у торговца',
+		'CoordX':'726px',
+		'CoordY':'1030px',
+		'Groups':'[1]',
+		},
+		
+		{
+		'Name':'Крит. урон пушки 5%, у торговца',
+		'CoordX':'724px',
+		'CoordY':'1035px',
+		'Groups':'[0]',
+		},
+		
+		{
+		'Name':'Крит. урон мечом 5%, у торговца',
+		'CoordX':'723px',
+		'CoordY':'1033px',
+		'Groups':'[0]',
+		},
+		
+		{
+		'Name':'Комбо урон +25',
+		'CoordX':'678px',
+		'CoordY':'1196px',
+		'Groups':'[2]',
+		},
+		
+		{
+		'Name':'Урон вторичной атаки',
+		'CoordX':'673px',
+		'CoordY':'1296px',
+		'Groups':'[1]',
+		},
+		
+		{
+		'Name':'Сбор монет пушкой',
+		'CoordX':'705px',
+		'CoordY':'1138px',
+		'Groups':'[1]',
+		},
+		
+		{
+		'Name':'Крит. урон пушки 5%, в разломе скалы',
+		'CoordX':'652px',
+		'CoordY':'1168px',
+		'Groups':'[0]',
+		},
+		
+		{
+		'Name':'Регенерация здоровья +5',
+		'CoordX':'616px',
+		'CoordY':'1414px',
+		'Groups':'[0]',
+		},
+		
+		{
+		'Name':'Красная луна (в клетке)',
+		'CoordX':'548px',
+		'CoordY':'1594px',
+		'Groups':'[2]',
+		},
+		
+		{
+		'Name':'Крит. урон мечом 5%, 1 ур., на двери',
+		'CoordX':'614px',
+		'CoordY':'1604px',
+		'Groups':'[0]',
+		},
+		
+		{
+		'Name':'Магниткая пряжка',
+		'CoordX':'583px',
+		'CoordY':'1772px',
+		'Groups':'[2]',
+		},
+		
+		{
+		'Name':'Урон мечом +2',
+		'CoordX':'618px',
+		'CoordY':'1726px',
+		'Groups':'[0]',
+		},
+		
+		{
+		'Name':'Радиус обрушения +50 см',
+		'CoordX':'626px',
+		'CoordY':'1458px',
+		'Groups':'[0]',
+		},
+		
+		{
+		'Name':'Урон мечом +1',
+		'CoordX':'568px',
+		'CoordY':'1582px',
+		'Groups':'[0]',
+		},
+		
+		{
+		'Name':'Урон мечом +2 (клетка, фасад)',
+		'CoordX':'597px',
+		'CoordY':'1517px',
+		'Groups':'[0]',
+		},
+		
+		{
+		'Name':'Урон вторичной атаки2',
+		'CoordX':'550px',
+		'CoordY':'1614px',
+		'Groups':'[1]',
+		},
+		
+		{
+		'Name':'Радиус обрушения +50 см',
+		'CoordX':'468px',
+		'CoordY':'1615px',
+		'Groups':'[0]',
+		},
+		
+		{
+		'Name':'Урон мечом +1 (в скале проход)',
+		'CoordX':'745px',
+		'CoordY':'1685px',
+		'Groups':'[0]',
+		},
+		
+		{
+		'Name':'Урон пушки +1 (наверху в скале, рядом с кристалом)',
+		'CoordX':'655px',
+		'CoordY':'1808px',
+		'Groups':'[0]',
+		},
+		
+		{
+		'Name':'Тихие ботинки',
+		'CoordX':'593px',
+		'CoordY':'1385px',
+		'Groups':'[1]',
+		},
+		
+		{
+		'Name':'Регенерация здоровья +5',
+		'CoordX':'605px',
+		'CoordY':'935px',
+		'Groups':'[0]',
+		},
+		
+		{
+		'Name':'Урон вторичной атаки3',
+		'CoordX':'805px',
+		'CoordY':'1347px',
+		'Groups':'[1]',
+		},
+		
+		{
+		'Name':'Бочка, скорость снарядов пушки x 2, для торговца',
+		'CoordX':'802px',
+		'CoordY':'1347px',
+		'Groups':'[2]',
+		},
+		
+		{
+		'Name':'Взрывной урон пушки',
+		'CoordX':'1116px',
+		'CoordY':'1224px',
+		'Groups':'[1]',
+		},
+		
+		{
+		'Name':'Максимум здоровья +5 (под артефактом)',
+		'CoordX':'894px',
+		'CoordY':'1230px',
+		'Groups':'[0]',
+		},
+		
+		{
+		'Name':'Просто монеты (на скале)',
+		'CoordX':'947px',
+		'CoordY':'1101px',
+		'Groups':'[0]',
+		},
+		
+		{
+		'Name':'Бочка, максимум здоровья +15 (белая)',
+		'CoordX':'1071px',
+		'CoordY':'1163px',
+		'Groups':'[0]',
+		},
+		
+		{
+		'Name':'Урон мечом +3, подвал где лава',
+		'CoordX':'668px',
+		'CoordY':'1295px',
+		'Groups':'[0]',
+		},
+		
+		{
+		'Name':'Урон мечом +3, там где погреб, колодец',
+		'CoordX':'572px',
+		'CoordY':'1333px',
+		'Groups':'[0]',
+		},
+		
+		{
+		'Name':'Урон мечом +3, у торговца',
+		'CoordX':'791px',
+		'CoordY':'769px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Просто монеты, дом с окном, куб',
+		'CoordX':'494px',
+		'CoordY':'1354px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Просто монеты',
+		'CoordX':'1319px',
+		'CoordY':'476px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Урон обрушения +33% (дом с синей крышей)',
+		'CoordX':'630px',
+		'CoordY':'640px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Регенерация здоровья +5 (дом где кнопка-выстрел)',
+		'CoordX':'623px',
+		'CoordY':'645px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Максимум здоровья +5, 2-ой уровень',
+		'CoordX':'736px',
+		'CoordY':'594px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Максимум здоровья +5, разлом, только магнит',
+		'CoordX':'827px',
+		'CoordY':'483px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Максимум здоровья +5 (на скале, рядом с качелями)',
+		'CoordX':'907px',
+		'CoordY':'415px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Удачная добыча - враги чаще оставляют после себя здоровье',
+		'CoordX':'865px',
+		'CoordY':'435px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Радиус обрушения +50 см, на пике',
+		'CoordX':'928px',
+		'CoordY':'482px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Урон пушки +1, где кран',
+		'CoordX':'1036px',
+		'CoordY':'849px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Крит. урон мечом 5%, колодец где сверху стекло, магнит',
+		'CoordX':'701px',
+		'CoordY':'660px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Максимум монет x1,5, кастрюля, радуга, магнит',
+		'CoordX':'560px',
+		'CoordY':'740px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Просто монеты, кастрюля, радуга, магнит',
+		'CoordX':'559px',
+		'CoordY':'743px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Регенерация здоровья +5 (сбоку от кактуса)',
+		'CoordX':'578px',
+		'CoordY':'83px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Скорость атаки мечом +33% (прыгать на кране)',
+		'CoordX':'585px',
+		'CoordY':'316px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Радиус обрушения +50 см, в секретном месте, наверху',
+		'CoordX':'544px',
+		'CoordY':'548px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Максимум монет x1,5, над красильной машиной, можно найти с пряжкой',
+		'CoordX':'601px',
+		'CoordY':'622px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Максимум здоровья +5, за красильной машиной',
+		'CoordX':'564px',
+		'CoordY':'642px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Просто монеты (рядом с красильной машиной)',
+		'CoordX':'603px',
+		'CoordY':'644px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Урон мечом +3 за морковкой',
+		'CoordX':'570px',
+		'CoordY':'1274px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Скорость регенерации x2, странный лаз в скале',
+		'CoordX':'947px',
+		'CoordY':'516px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Урон мечом +2 (где колесо)',
+		'CoordX':'1202px',
+		'CoordY':'565px',
+		'Groups':'[0]',
+		},
+		
+		
+		{
+		'Name':'Святая пушка',
+		'CoordX':'1122px',
+		'CoordY':'1181px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Просто монеты (под крышей)',
+		'CoordX':'1145px',
+		'CoordY':'1154px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Просто монеты (на крыше)',
+		'CoordX':'1169px',
+		'CoordY':'1151px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Скорость перезарядки пушки +66%, у торговца',
+		'CoordX':'1242px',
+		'CoordY':'1176px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Крит. урон пушки 5%, у торговца',
+		'CoordX':'1220px',
+		'CoordY':'1172px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Регенерация здоровья +10, у торговца',
+		'CoordX':'1234px',
+		'CoordY':'1159px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Урон пушки +5, у торговца',
+		'CoordX':'1229px',
+		'CoordY':'1191px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Урон пушки +5, в трубе',
+		'CoordX':'1313px',
+		'CoordY':'1186px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Максимум здоровья +15 (в горе около меча вход)',
+		'CoordX':'1327px',
+		'CoordY':'1039px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Регенерация здоровья +5, в скале где головоломка',
+		'CoordX':'1441px',
+		'CoordY':'1413px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Максимум здоровья +5 (в будке)',
+		'CoordX':'1257px',
+		'CoordY':'1420px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Красная луна (на другом берегу)',
+		'CoordX':'1600px',
+		'CoordY':'1376px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Регенерация здоровья +5',
+		'CoordX':'1647px',
+		'CoordY':'1718px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Силовой луч',
+		'CoordX':'1619px',
+		'CoordY':'1768px',
+		'Groups':'[2]',
+		},		
+		{
+		'Name':'Урон мечом +1 (где 2 д. бруска, далее ключ)',
+		'CoordX':'1698px',
+		'CoordY':'2030px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Крит. урон мечом 5%, за дверью',
+		'CoordX':'1585px',
+		'CoordY':'2017px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Радиус обрушения +50 см',
+		'CoordX':'1588px',
+		'CoordY':'2183px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Максимум монет x1,5, у торговца',
+		'CoordX':'1842px',
+		'CoordY':'2453px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Комбо урон +25',
+		'CoordX':'1988px',
+		'CoordY':'2392px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Скорость перезарядки пушки +66%, у торговца',
+		'CoordX':'1809px',
+		'CoordY':'2466px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Радиус обрушения +50 см, дом с синей крышей',
+		'CoordX':'1923px',
+		'CoordY':'2218px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Пиксельные блоки мечом плюс сила',
+		'CoordX':'1883px',
+		'CoordY':'2388px',
+		'Groups':'[1]',
+		},		
+		{
+		'Name':'Просто монеты (где желтые кристаллы)',
+		'CoordX':'1575px',
+		'CoordY':'2386px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Крит. урон пушки 5%, у торговца',
+		'CoordX':'1836px',
+		'CoordY':'2456px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Регенерация здоровья +5, у торговца',
+		'CoordX':'1822px',
+		'CoordY':'2459px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Крит. урон мечом 5%,  у торговца',
+		'CoordX':'1810px',
+		'CoordY':'2457px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Радиус обрушения +50 см, подвал',
+		'CoordX':'1564px',
+		'CoordY':'1589px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Урон обрушения +33% (дом, нужен луч)',
+		'CoordX':'1335px',
+		'CoordY':'1741px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Святой железный меч',
+		'CoordX':'1348px',
+		'CoordY':'1504px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Магнит для монет',
+		'CoordX':'1164px',
+		'CoordY':'1505px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Максимум здоровья +2 (под полом, где река)',
+		'CoordX':'1258px',
+		'CoordY':'977px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Золотой модуль луча',
+		'CoordX':'1203px',
+		'CoordY':'1018px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Двойной прыжок, у торговца',
+		'CoordX':'1182px',
+		'CoordY':'1016px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Тройной прыжок, у торговца',
+		'CoordX':'1182px',
+		'CoordY':'1023px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Силовой куб',
+		'CoordX':'1181px',
+		'CoordY':'1018px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Мега маггафин',
+		'CoordX':'1174px',
+		'CoordY':'1017px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Магниткая пряжка',
+		'CoordX':'1160px',
+		'CoordY':'1017px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Регенерация здоровья +5',
+		'CoordX':'1368px',
+		'CoordY':'869px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Максимум здоровья +5 (за красильной машиной)',
+		'CoordX':'420px',
+		'CoordY':'1325px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Комбо урон +25 (под блоком, низ)',
+		'CoordX':'422px',
+		'CoordY':'1340px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Урон обрушения +33% (80 крутости)',
+		'CoordX':'421px',
+		'CoordY':'1372px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Урон пушки +1, красильная деревня, луч или телепорт',
+		'CoordX':'729px',
+		'CoordY':'1595px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Комбо урон +25, на пике',
+		'CoordX':'563px',
+		'CoordY':'1352px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Регенерация здоровья +5, п. блок',
+		'CoordX':'952px',
+		'CoordY':'1189px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Регенерация здоровья +10, у торговца',
+		'CoordX':'1241px',
+		'CoordY':'1169px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Убийство силовым кубом',
+		'CoordX':'806px',
+		'CoordY':'935px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Максимум здоровья +5, на скале',
+		'CoordX':'789px',
+		'CoordY':'929px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Объединение луча и куба',
+		'CoordX':'689px',
+		'CoordY':'694px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Красная луна (на пике)',
+		'CoordX':'657px',
+		'CoordY':'641px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Урон пушки +5, за стеной воды',
+		'CoordX':'1000px',
+		'CoordY':'528px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Транслокатор',
+		'CoordX':'983px',
+		'CoordY':'708px',
+		'Groups':'[1]',
+		},	
+		{
+		'Name':'Скорость перезарядки телепорта x2, иногда 2 раза появляется',
+		'CoordX':'976px',
+		'CoordY':'740px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Урон телепорта x 2',
+		'CoordX':'1083px',
+		'CoordY':'700px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Сила выстрела телепорта',
+		'CoordX':'1131px',
+		'CoordY':'553px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Урон пушки +5, наверху в углу',
+		'CoordX':'1110px',
+		'CoordY':'505px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Комбо урон +25',
+		'CoordX':'1103px',
+		'CoordY':'565px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Урон телепорта x 2',
+		'CoordX':'1166px',
+		'CoordY':'745px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Больше добычи',
+		'CoordX':'1314px',
+		'CoordY':'680px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Затыкатель вулканов (требует 166 крутости)',
+		'CoordX':'1161px',
+		'CoordY':'1536px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Просто монеты, пик скалы',
+		'CoordX':'1288px',
+		'CoordY':'1133px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Регенерация здоровья +5, у дворца',
+		'CoordX':'1464px',
+		'CoordY':'876px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Счетчик надгробий',
+		'CoordX':'1882px',
+		'CoordY':'994px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Регенерация здоровья +5, телепорт, заходим от меча',
+		'CoordX':'1036px',
+		'CoordY':'1228px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Комбо урон +25, 2-ой этаж башни',
+		'CoordX':'1611px',
+		'CoordY':'1622px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Регенерация здоровья +5',
+		'CoordX':'1628px',
+		'CoordY':'1368px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Просто монеты, в углу',
+		'CoordX':'1761px',
+		'CoordY':'1904px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Скорость регенерации x2, где морковка и деревяшки',
+		'CoordX':'1860px',
+		'CoordY':'1981px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Урон обрушения +33%, у торговца',
+		'CoordX':'1799px',
+		'CoordY':'2459px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Просто монеты, плато, верх скалы',
+		'CoordX':'1492px',
+		'CoordY':'2103px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Урон мечом +3, деревня, амбар',
+		'CoordX':'1796px',
+		'CoordY':'2502px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Просто монеты, блок наверху, телепорт, можно попасть сверху',
+		'CoordX':'1546px',
+		'CoordY':'2190px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Максимум здоровья +15, за шарами',
+		'CoordX':'1562px',
+		'CoordY':'2276px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Зеленая луна, дом с дыркой в стене',
+		'CoordX':'543px',
+		'CoordY':'1021px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Регенерация здоровья +5 (подземелье)',
+		'CoordX':'574px',
+		'CoordY':'1010px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Урон обрушения +33% (подземелье)',
+		'CoordX':'567px',
+		'CoordY':'982px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Зеленая луна, заход через крышу подземелья',
+		'CoordX':'525px',
+		'CoordY':'1002px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Урон пушки +5, в трубе',
+		'CoordX':'815px',
+		'CoordY':'1115px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Максимум здоровья +5, у меня на крыше, телепорт',
+		'CoordX':'447px',
+		'CoordY':'1328px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Урон вторичной атаки4',
+		'CoordX':'1305px',
+		'CoordY':'973px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Урон вторичной атаки5',
+		'CoordX':'897px',
+		'CoordY':'147px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Максимум монет x 2, в конце игры',
+		'CoordX':'443px',
+		'CoordY':'1345px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Статистика, в конце игры',
+		'CoordX':'441px',
+		'CoordY':'1344px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Счетчик сундуков, у торговца в конце игры',
+		'CoordX':'497px',
+		'CoordY':'1346px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Радиус действия детектора сундуков * 2 , у торговца в конце игры',
+		'CoordX':'492px',
+		'CoordY':'1341px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Святая железная пушка (требует 128 вторичного урона)',
+		'CoordX':'454px',
+		'CoordY':'1308px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Просто монеты, под будкой, там где пикс. блок',
+		'CoordX':'641px',
+		'CoordY':'1008px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Комбо урон +25 (за железными прутьями)',
+		'CoordX':'375px',
+		'CoordY':'1733px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Красная луна',
+		'CoordX':'978px',
+		'CoordY':'1526px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Cупрамеч',
+		'CoordX':'1075px',
+		'CoordY':'1030px',
+		'Groups':'[2]',
+		},
+		{
+		'Name':'Максимум монет x 2 (конец радуги)',
+		'CoordX':'713px',
+		'CoordY':'379px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Просто монеты, блок наверху, (конец радуги)',
+		'CoordX':'705px',
+		'CoordY':'379px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Регенерация здоровья +5',
+		'CoordX':'1250px',
+		'CoordY':'86px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Комбо урон +25',
+		'CoordX':'1334px',
+		'CoordY':'355px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Максимум здоровья +5',
+		'CoordX':'738px',
+		'CoordY':'817px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Детектор надгробий',
+		'CoordX':'156px',
+		'CoordY':'1410px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Последняя бочка, счастье',
+		'CoordX':'137px',
+		'CoordY':'1410px',
+		'Groups':'[1]',
+		},
+		{
+		'Name':'Урон мечом 5% (справа от меча)',
+		'CoordX':'1390px',
+		'CoordY':'1162px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Урон мечом +3 (слева от меча)',
+		'CoordX':'1367px',
+		'CoordY':'1181px',
+		'Groups':'[0]',
+		},
+		{
+		'Name':'Просто деньги (верхушка меча)',
+		'CoordX':'1380px',
+		'CoordY':'1172px',
+		'Groups':'[0]',
+		},
+		
+		{
+		'Name':'Максимум здоровья +5',
+		'CoordX':'1641px',
+		'CoordY':'1789px',
+		'Groups':'[0]',
+		},		
+		{
+		'Name':'Скорость бега 1.5, у торговца',
+		'CoordX':'474px',
+		'CoordY':'1336px',
+		'Groups':'[2]',
+		},
+		]
+</script>								
