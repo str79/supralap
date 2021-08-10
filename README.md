@@ -36,3 +36,5 @@ a list of what’s in the circle with the number and description appeared.
 The order of work is approximately the following: we press the button to turn on everything, as we progress through the game we turn off the collected points individually, and our path is remembered in history.
 
 If you click on the title of the story with alt pressed, the story is cleared.
+
+engine version 1.0
