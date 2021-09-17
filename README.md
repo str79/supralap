@@ -37,4 +37,6 @@ The order of work is approximately the following: we press the button to turn on
 
 If you click on the title of the story with alt pressed, the story is cleared.
 
-engine version 1.0
+engine version 1.264
+
+Full help read on runing programm
