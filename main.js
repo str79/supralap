@@ -229,7 +229,7 @@ $(document).ready(function() {
 					//Новая версия где вместо номера профиля его значение pointarr
 					profileCurrent=TestPtProfile(tmparr[1]);
 					
-					if (!profileCurrent){
+					if (!profileCurrent && profileCurrent!==0){
 						//не нашли
 						profileCurrent=null;
 					}
