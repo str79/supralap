@@ -1,6 +1,6 @@
 var keymove=0;
-var gmove=0;
-var gsize=0;
+var gmove=0; //global move - перемещение
+var gsize=0; //gloval size - изменения расстояния всех значков
 var invIndex=0;
 /*
 	на будущее
@@ -15,19 +15,21 @@ var invIndex=0;
 $(document).ready(function() {
 	var mapcircle=0; //признак что курсор находится на точке-круге.
 	var maptarget=null;
+	var movehist=0; //режим перемещения элементов истории
 	var mapposx=null,mapposy=null;
 	var mapposcx=null,mapposcy=null;
 	var circlept=0;  //признак что включен информационный прямоугольник
 	var Selectpt=0;  //признак что включен прямоугольник выделения
-	var defaultProfile=0;
-	var profileIndex=defaultProfile;
+	var defaultProfile=0; //профиль по дефолту.
+	var profileIndex=defaultProfile; //текущий профиль.
 	var gTmpArr={};
 	var selectedArr=[]; //массив выделенных элементов
-	var historyName;
-	let profSym='@g=';
-	var preId='mapoint';
+	var historyName; //имя массива истории
+	let profSym='@g='; //символ разделитель между профилем и точкой, для истории
+	var preId='mapoint'; //ид перед названием точки
 	var activeongroups=1; //включать ли категории (в начале и при переключении профилей-карт)
 	var lastId; //последний ид точки-круга (для применения действий над ним)
+	var histMoveNum; //номер перемещаемого элемента
 	
 	//загрузка истории
 	historyName=$('.historyName').text();
@@ -91,6 +93,7 @@ $(document).ready(function() {
 	function profileSelect(num){
 		var mainpic=$('#mainpic');
 		var zoom=1;
+		if (Profiles[num]==undefined){return;}
 		
 		if (typeof(Profiles[num].zoom)!=undefined){
 			zoom=Profiles[num].zoom;
@@ -399,12 +402,28 @@ $(document).ready(function() {
 		
 		mainpic.append(newel);
 	}
+	
 	$('#flyProf .container > h2').on('click',function(event){
 		$('.mainfly').toggleClass('hide');
 	});
 	
+	function drawpoint(tmppoint,ptarr,nindex){
+		ptprops='';
+		for (prop in self[Profiles[nindex].pointarr][tmppoint]) {
+			if (prop=='PointIndex'){continue;}
+			ptprops+='\t\t';
+			ptprops+='\''+prop+'\' : \''+self[Profiles[nindex].pointarr][tmppoint][prop]+'\','+"\n";
+		}
+		return '\t{'+"\n"+ptprops+'\t},'+"\n";
+	}
+	$('#flylist > .container > h2').on('click',function(event){
+		if (event.altKey){
+			$(this).siblings('.maingroups').toggleClass('hide');
+		}
+	});
 	$('#flylist > .container > h2').dblclick(function(event){
 		var curtext='',alton=0;
+		newGlobhist=[]; //временный массив истории для сортировки
 		if (event.altKey){
 			//Решим частичного вывода
 			alton=1;
@@ -425,87 +444,132 @@ $(document).ready(function() {
 		var tmpval='';
 		var tmpproftext='';
 		
-		if (!alton){
-			//Полный вывод
-			var tmpprof={};
-			var profhead='';
-			
-			//Собираем профили
+		
+		//старые профили
+		//Полный вывод
+		var tmpprof={};
+		var profhead='';
+		
+		if (alton){
+			//сортируем массив ключей профиля в историческом порядке
+			var arrsort=[];
 			for (nindex in Profiles) {
-				tmpproftext='';
-				for (prop in Profiles[nindex]) {
-					tmpval=Profiles[nindex][prop];
-					tmpval=tmpval.toString().replace(/\t\t/g,String.fromCharCode(92)+"\n\t\t");
-					
-					if (isNaN(tmpval)){
-						tmpproftext+='\t\t';
-						tmpproftext+="'"+prop+"':'"+tmpval+"',"+"\n";
-					}
-					else
-					{
-						tmpproftext+='\t\t';
-						tmpproftext+="'"+prop+"':"+tmpval+","+"\n";
-					}
-					
+				//Profiles[nindex].pointarr
+				tmpsort=Object.keys(self[Profiles[nindex].pointarr]);
+				//дополняем
+				for (tmppoint in tmpsort) {
+					tmpsort[tmppoint]=preId+(Number(tmpsort[tmppoint])+Profiles[nindex].StartIndex)+profSym+Profiles[nindex].pointarr;
 				}
+				//сортируем индексы
+				//инвертируем в случае отсутствия значения в истории - те, которых нет в истории сдвинутся вперед
+				tmpsort.sort((a, b) => ((globhist.indexOf(a)<0 || globhist.indexOf(b)<0)?-(globhist.indexOf(a) - globhist.indexOf(b)):(globhist.indexOf(a) - globhist.indexOf(b))));
+				//Переделываем историю
+				for (tmppoint in tmpsort) {
+					tmppos=globhist.indexOf(tmpsort[tmppoint]);
+					if (tmppos>=0){
+						newGlobhist[tmppos]=preId+(Number(tmppoint)+Profiles[nindex].StartIndex)+profSym+Profiles[nindex].pointarr;
+					}					
+				}
+				//удаляем дополнения
+				for (tmppoint in tmpsort) {
+					tmpsort[tmppoint]=(Number(tmpsort[tmppoint].split(profSym)[0].replace(preId,''))-Profiles[nindex].StartIndex);
+				}
+				//tmparr=newid.split(profSym);
+				arrsort[nindex]=tmpsort;
+			}
+			//на выходе получаем массив нужного профиля с индексами в нужном порядке
+			//update history
+			setCookie(historyName,JSON.stringify(newGlobhist),{expires:60*60*24*30,path:'/'})
+		}
+		//Собираем профили
+		for (nindex in Profiles) {
+			tmpproftext='';
+			for (prop in Profiles[nindex]) {
+				tmpval=Profiles[nindex][prop];
+				tmpval=tmpval.toString().replace(/\t\t/g,String.fromCharCode(92)+"\n\t\t");
 				
-				//текущая карта отправляется наверх
-				if  (nindex==profileIndex){
-					profhead="\n\t"+'{'+"\n"+tmpproftext+'\t},'+profhead;
+				if (isNaN(tmpval)){
+					tmpproftext+='\t\t';
+					tmpproftext+="'"+prop+"':'"+tmpval+"',"+"\n";
 				}
 				else
 				{
-					profhead+="\n\t"+'{'+"\n"+tmpproftext+'\t},';
+					tmpproftext+='\t\t';
+					tmpproftext+="'"+prop+"':"+tmpval+","+"\n";
 				}
 				
-				//getall old maps
-				ptarr='';
-				for (tmppoint in self[Profiles[nindex].pointarr]) {
-					ptprops='';
-					for (prop in self[Profiles[nindex].pointarr][tmppoint]) {
-						if (prop=='PointIndex'){continue;}
-						ptprops+='\t\t';
-						ptprops+='\''+prop+'\' : \''+self[Profiles[nindex].pointarr][tmppoint][prop]+'\','+"\n";
-					}
-					ptarr+='\t{'+"\n"+ptprops+'\t},'+"\n";
-				}
-				tmpprof[nindex]='var '+Profiles[nindex].pointarr+'=['+"\n"+ptarr+'];'+"\n";
 			}
 			
-			curtext+='var Profiles=['+profhead+"\n"+']'+"\n\n";
+			//текущая карта отправляется наверх
+			if  (nindex==profileIndex){
+				profhead="\n\t"+'{'+"\n"+tmpproftext+'\t},'+profhead;
+			}
+			else
+			{
+				profhead+="\n\t"+'{'+"\n"+tmpproftext+'\t},';
+			}
+			
+			//getall old maps
+			ptarr='';
+			if (alton){
+				for (tmppoint in arrsort[nindex]) {
+					ptarr+=drawpoint(arrsort[nindex][tmppoint],ptarr,nindex);
+				}
+			}
+			else{
+				for (tmppoint in self[Profiles[nindex].pointarr]) {
+					ptarr+=drawpoint(tmppoint,ptarr,nindex);
+				}
+			}
+			
+			tmpprof[nindex]='var '+Profiles[nindex].pointarr+'=['+"\n"+ptarr+'];'+"\n";
 		}
+		
+		curtext+='var Profiles=['+profhead+"\n"+']'+"\n\n";
+		//старые профили
 		
 		var curbtn='';
 		//flylist=$('#mainpic .mycircle:not(.hide)');
 		flylist=$('#mainpic .mycircle');
-		flylist.each(function(){
-			
-			var newid=this.id;
-			var elemmap=$(this);
-			
+		function drawpointCur(el,group){
+			var elemmap=$(el);
+			var curbtn='';
 			curbtn+="\t"+'{'+"\n";
 			curbtn+="\t\t"+"'Name':'"+elemmap.attr('title')+"',"+"\n";
 			curbtn+="\t\t"+"'CoordX':'"+elemmap.css('left')+"',"+"\n";
 			curbtn+="\t\t"+"'CoordY':'"+elemmap.css('top')+"',"+"\n";
-			curbtn+="\t\t"+"'Groups':'"+"["+arrgroup[newid]+"]',"+"\n";
+			curbtn+="\t\t"+"'Groups':'"+"["+group+"]',"+"\n";
 			curbtn+="\t"+'},'+"\n";
-		});
-		curbtn='var '+Profiles[profileIndex].pointarr+'=['+"\n"+curbtn+'];'+"\n";
+			return curbtn;
+		}
 		
 		if (alton){
-			curtext+=curbtn;
-		}
-		else
-		{
-			tmpprof[profileIndex]=curbtn;
-			for (profindex in tmpprof) {
-				if (profindex!=profileIndex){
-					curtext+=tmpprof[profindex];
-				}
+			//собираем точки
+			for (tmppoint in arrsort[profileIndex]) {
+				el=flylist.filter('#'+preId+(Profiles[profileIndex].StartIndex+arrsort[profileIndex][tmppoint]));
+				curbtn+=drawpointCur(el,arrgroup[el.attr('id')]);
 			}
-			//Точки текущей карты помещаются в конец
-			curtext+=tmpprof[profileIndex];
+		}else
+		{
+			flylist.each(function(){
+				el=$(this);
+				curbtn+=drawpointCur(el,arrgroup[el.attr('id')]);
+			});
 		}
+		//no data
+		if (Profiles[profileIndex]!=undefined){
+			curbtn='var '+Profiles[profileIndex].pointarr+'=['+"\n"+curbtn+'];'+"\n";
+		}
+		
+		tmpprof[profileIndex]=curbtn;
+		for (profindex in tmpprof) {
+			if (profindex!=profileIndex){
+				curtext+=tmpprof[profindex];
+			}
+		}
+		//Точки текущей карты помещаются в конец
+		curtext+=tmpprof[profileIndex];
+		
 		
 		
 		//console.log(curtext);
@@ -588,7 +652,7 @@ $(document).ready(function() {
 			!pName.match(/^[^А-я\w\d\s_-]*$/) &&
 			!pFile.match(/^[^\w\d\s_-]*$/)
 			){
-			var pPt=pFile.replace(/(.*?)\..*/,'$1');
+			var pPt=pFile.replace(/(.*?)\..*/,'$1')+'Pt';
 			
 			Profiles[newIndex]={};
 			Profiles[newIndex]['Name']=pName;
@@ -631,11 +695,13 @@ $(document).ready(function() {
 		if (pName!==false && !pName.match(/^[^A-zА-я\w\d\s_-]*$/)
 			){
 			newGropuString="<div href=\"#\" class=\"list-group-item\"> \t\t<h4 class=\"list-group-item-heading\"><span class=\"icon\"></span><span class=\"text\">&nbsp;"+pName+"</span></h4> \t\t</div> \t\t";
-			Profiles[profileIndex]['GpoupList']=Profiles[profileIndex]['GpoupList'].replace(/(.*)(\<div.*?autohist)(.*)/,'$1'+newGropuString+'$2$3')
-			
-			//Отобразим группу
-			profileSelect(profileIndex);
-			
+			//no data
+			if (Profiles[profileIndex]!=undefined){
+				Profiles[profileIndex]['GpoupList']=Profiles[profileIndex]['GpoupList'].replace(/(.*)(\<div.*?autohist)(.*)/,'$1'+newGropuString+'$2$3')
+				
+				//Отобразим группу
+				profileSelect(profileIndex);
+			}
 		}
 	});	
 	$('#flyaoMenu .list-group-item .compress').on('click',(event)=>{
@@ -652,31 +718,31 @@ $(document).ready(function() {
 			compressArr=$('#mainpic .mycircle').not('.hide');
 		}
 		
-			$(compressArr).each(function(){
-				//tmpel=$(this).offset();
-				tmpel.left=parseInt($(this).css('left'))
-				tmpel.top=parseInt($(this).css('top'))
-				
-				if (newrect.left >= tmpel.left){
-					newrect.left = tmpel.left;
-				}
-				if (newrect.top >= tmpel.top){
-					newrect.top = tmpel.top;
-				}
-				if (newrect.right <= tmpel.left){
-					newrect.right = tmpel.left;
-				}
-				if (newrect.bottom <= tmpel.top){
-					newrect.bottom = tmpel.top;
-				}
-			});
-			newpoint.x=parseInt(newrect.left+(newrect.right-newrect.left)/2);
-			newpoint.y=parseInt(newrect.top+(newrect.bottom-newrect.top)/2);
+		$(compressArr).each(function(){
+			//tmpel=$(this).offset();
+			tmpel.left=parseInt($(this).css('left'))
+			tmpel.top=parseInt($(this).css('top'))
 			
-			$(compressArr).each(function(){
-				this.style.left=newpoint.x+'px';
-				this.style.top=newpoint.y+'px';
-			});
+			if (newrect.left >= tmpel.left){
+				newrect.left = tmpel.left;
+			}
+			if (newrect.top >= tmpel.top){
+				newrect.top = tmpel.top;
+			}
+			if (newrect.right <= tmpel.left){
+				newrect.right = tmpel.left;
+			}
+			if (newrect.bottom <= tmpel.top){
+				newrect.bottom = tmpel.top;
+			}
+		});
+		newpoint.x=parseInt(newrect.left+(newrect.right-newrect.left)/2);
+		newpoint.y=parseInt(newrect.top+(newrect.bottom-newrect.top)/2);
+		
+		$(compressArr).each(function(){
+			this.style.left=newpoint.x+'px';
+			this.style.top=newpoint.y+'px';
+		});
 	});	
 	$('#flycMenu .list-group-item-text').on('click',(event)=>{
 		let zobj=event.target.dataset.action;
@@ -686,7 +752,7 @@ $(document).ready(function() {
 				//keymove=0;
 				self[zobj]=0;
 			}
-			if (zobj='invIndex'){
+			if (zobj=='invIndex'){
 				//0
 				$('#mainpic .mycircle').css('z-index','');
 			}
@@ -698,7 +764,7 @@ $(document).ready(function() {
 				//keymove=1;
 				self[zobj]=1;
 			}
-			if (zobj='invIndex'){
+			if (zobj=='invIndex'){
 				//1
 				var maxindex=pointsarr.length;
 				$('#mainpic .mycircle').each(function(){
@@ -745,7 +811,7 @@ $(document).ready(function() {
 		$('#flyaoMenu').addClass('hide');
 		//console.log(event);
 		if (event.target.className.indexOf('mycircle')>=0){mapcircle=1;}
-		if (event.shiftKey && mapcircle==1){
+		if (event.shiftKey && mapcircle==1 && !gsize){
 			//хотим изменить маркер
 			
 			//старый номер группы
@@ -978,6 +1044,10 @@ $(document).ready(function() {
 		}
 	});
 	$('#mainpic').mousemove(function(event){
+		var curscale=1;
+		var element = document.querySelector('#mainpic');
+		var scaleX = element.getBoundingClientRect().width / element.offsetWidth;
+		
 		if ($(this).hasClass('active') || circlept || Selectpt){
 			var mainpic;
 			//если это круг
@@ -1038,6 +1108,7 @@ $(document).ready(function() {
 						if (event.shiftKey){
 							gcy=gcx;
 						}
+						console.log('Рост у.е. '+gcx);
 					}
 					else if (gmove)
 					{
@@ -1046,21 +1117,6 @@ $(document).ready(function() {
 						gcy=parseInt(event.pageY)-mapposy;
 					}
 					
-					/*$('#mainpic .mycircle').each(function(){
-						var tmpel=$(this);
-						
-						if (gsize){
-						cx=gTmpArr[tmpel.attr('id')].left*(gcx+1);
-						cy=gTmpArr[tmpel.attr('id')].top*(gcy+1);
-						}else
-						{
-						cx=gTmpArr[tmpel.attr('id')].left+gcx;
-						cy=gTmpArr[tmpel.attr('id')].top+gcy;
-						}
-						
-						tmpel.css('left',cx+'px');
-						tmpel.css('top',cy+'px');
-					});*/
 					if (Object.keys(gTmpArr).length){
 						for (let keyindex of Object.keys(gTmpArr)) {
 							var tmpel=$('#'+keyindex);
@@ -1068,6 +1124,7 @@ $(document).ready(function() {
 							if (gsize){
 								cx=gTmpArr[tmpel.attr('id')].left*(gcx+1);
 								cy=gTmpArr[tmpel.attr('id')].top*(gcy+1);
+							console.log('Итог '+cx);
 							}else
 							{
 								cx=gTmpArr[tmpel.attr('id')].left+gcx;
@@ -1081,9 +1138,21 @@ $(document).ready(function() {
 				}
 				else
 				{
+					//тоже mapcircle, но не глобальное
+					
+					//Корректировка на основе zoom
+					if (mapcircle){
+						//var scaleY = element.getBoundingClientRect().height / element.offsetHeight;
+						//if (Profiles[profileIndex]!=undefined && typeof(Profiles[profileIndex].zoom)!=undefined){
+						//curscale=Profiles[profileIndex].zoom;
+						curscale=scaleX;
+						cx=mapposcx+(event.pageX-mapposx)/curscale;
+						cy=mapposcy+(event.pageY-mapposy)/curscale;
+					}
+					
 					if (mainpic){
 						mainpic.css('left',cx+'px');
-					mainpic.css('top',cy+'px');
+						mainpic.css('top',cy+'px');
 					}
 				}
 			}
@@ -1137,7 +1206,7 @@ $(document).ready(function() {
 			var newid=event.target.id;
 			var flylist;
 			flylist=$('#flylist .list-group-item .list-group-item-text');
-			console.log(newid);
+			//console.log(newid);
 			flylist.each(function(){
 				if ($(this).data('id')==newid){
 					//нашли
@@ -1256,17 +1325,72 @@ $(document).ready(function() {
 			}
 		}
 		UpdateCountGr(groupnum);
-	});				
-	$('#flylist .list-group-item-text').hover(
-		function(){
-			var el=$(this);
-			$('#'+el.data('id')).addClass('highlight');
-		},
-		function(){
-			var el=$(this);
-			$('#'+el.data('id')).removeClass('highlight');
+	});
+	$('#flylist').on('click','.autohist .list-group-item-text',function(e){
+		//console.log(e);
+		if (e.shiftKey){
+			if (movehist==1){
+				movehist=0;
+				//просто отмена
+				$(this).removeClass('hMove');
+			}
+			else{
+				movehist=1;
+				var el=$(this);
+				var elstr=el.data('id')+profSym+el.data('prof');
+				histMoveNum=globhist.indexOf(elstr);
+			}
+			}else{
+			if (movehist==1){
+				//просто отмена
+				movehist=0;
+				var el=$(this);
+				el.removeClass('hMove');
+				
+				var elstr=el.data('id')+profSym+el.data('prof');
+				if (histMoveNum>=0 && elstr!=globhist[histMoveNum]){
+					//удаляем первый элемент
+					var elstr1=globhist[histMoveNum];
+					//console.log(elstr1);
+					globhist.splice(histMoveNum, 1);
+					//console.log(globhist);
+					
+					//перемещаем историю
+					var elpos=globhist.indexOf(elstr);
+					if (elpos>=0){
+						//нашли в истории, добавляем
+						//console.log(elstr);
+						globhist.splice(elpos, 0,elstr1);
+						//console.log(globhist);
+						$('#flylist .autohist .list-group-item-text').remove();
+						loadhist();
+						//update history
+						setCookie(historyName,JSON.stringify(globhist));
+					}
+				}
+			}
 		}
-	);
+	});
+	$('#flylist').on({
+		mouseenter: function () {
+			var el=$(this);
+			var ishist=el.parent().hasClass('autohist');
+			$('#'+el.data('id')).addClass('highlight');
+			
+			if (ishist && movehist){
+				el.addClass('hMove')
+			}
+		},
+		mouseleave: function () {
+			var el=$(this);
+			var ishist=el.parent().hasClass('autohist');
+			$('#'+el.data('id')).removeClass('highlight');
+			
+			if (ishist && movehist){
+				el.removeClass('hMove')
+			}
+		}
+	}, ".list-group-item-text"); 
 	$('#mainpic').on('mouseenter','.mycircle',function(){
 		lastId=this.id;
 	});
@@ -1506,7 +1630,6 @@ $(document).ready(function() {
 		//расстояние до кнопки когда она уже уменьшилась
 		var bonusbtn=(20*(curscale-1))/2;
 		
-		
 		//$('#mainpic').css('left',sx/2+((mainpic.width()*(curscale-1))/2)-(btnx*curscale)-bonusbtn+'px')
 		//$('#mainpic').css('top',sy/2+((mainpic.height()*(curscale-1))/2)-(btny*curscale)-bonusbtn+'px');
 		
@@ -1539,49 +1662,49 @@ $(document).ready(function() {
 		/*var matches = document.cookie.match(new RegExp(
 			"(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
 		));*/
-		//if (!matches){
+		//if (!matches){}
 		matches=[];
 		matches[1]=localStorage.getItem(historyName);
-	//}
-	ret=matches ? decodeURIComponent(matches[1]) : undefined;
-	
-	return ret;
-}	
-function setCookie(name, value, options) {
-	/*options = options || {};
+		ret=matches ? decodeURIComponent(matches[1]) : undefined;
 		
-		var expires = options.expires;
+		return ret;
 		
-		if (typeof expires == "number" && expires) {
-		var d = new Date();
-		d.setTime(d.getTime() + expires * 1000);
-		expires = options.expires = d;
-		}
-		if (expires && expires.toUTCString) {
-		options.expires = expires.toUTCString();
-	}*/
-	
-	value = encodeURIComponent(value);
-	
-	/*var updatedCookie = name + "=" + value;
+	}
+	function setCookie(name, value, options={expires:60*60*24*30,path:'/'}) {
+		/*options = options || {};
+			
+			var expires = options.expires;
+			
+			if (typeof expires == "number" && expires) {
+			var d = new Date();
+			d.setTime(d.getTime() + expires * 1000);
+			expires = options.expires = d;
+			}
+			if (expires && expires.toUTCString) {
+			options.expires = expires.toUTCString();
+		}*/
 		
-		for (var propName in options) {
-		updatedCookie += "; " + propName;
-		var propValue = options[propName];
-		if (propValue !== true) {
-		updatedCookie += "=" + propValue;
-		}
-	}*/
+		value = encodeURIComponent(value);
+		
+		/*var updatedCookie = name + "=" + value;
+			
+			for (var propName in options) {
+			updatedCookie += "; " + propName;
+			var propValue = options[propName];
+			if (propValue !== true) {
+			updatedCookie += "=" + propValue;
+			}
+		}*/
+		
+		//document.cookie = updatedCookie;
+		localStorage.setItem(name, value);
+	}
+	function deleteCookie(name) {
+		localStorage.removeItem(name);
+		/*setCookie(name, "", {
+			expires: -1
+		})*/
+	}	
 	
-	//document.cookie = updatedCookie;
-	localStorage.setItem(name, value);
-}
-function deleteCookie(name) {
-	localStorage.removeItem(name);
-	/*setCookie(name, "", {
-		expires: -1
-	})*/
-}	
-
-//работа с куками
-});										
+	//работа с куками
+});																									 			
