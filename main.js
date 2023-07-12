@@ -16,13 +16,13 @@ $(document).ready(function() {
 	var mapcircle=0; //признак что курсор находится на точке-круге.
 	var maptarget=null;
 	var movehist=0; //режим перемещения элементов истории
-	var mapposx=null,mapposy=null;
-	var mapposcx=null,mapposcy=null;
+	var mapposx=null,mapposy=null; //старые координаты точки mouse event
+	var mapposcx=null,mapposcy=null; //старые координаты точки
 	var circlept=0;  //признак что включен информационный прямоугольник
 	var Selectpt=0;  //признак что включен прямоугольник выделения
 	var defaultProfile=0; //профиль по дефолту.
 	var profileIndex=defaultProfile; //текущий профиль.
-	var gTmpArr={};
+	var gTmpArr={}; //старые координаты, при чем множественные, для выделенных точек или для всех точек.
 	var selectedArr=[]; //массив выделенных элементов
 	var historyName; //имя массива истории
 	let profSym='@g='; //символ разделитель между профилем и точкой, для истории
@@ -935,7 +935,13 @@ $(document).ready(function() {
 				}
 				$(searchstr).each(function(){
 					let tmpel=$(this);
-					gTmpArr[tmpel.attr('id')]={'left':parseInt(tmpel.css('left')),'top':parseInt(tmpel.css('top'))};
+					let elx=parseInt(tmpel.css('left')),ely=parseInt(tmpel.css('top'));
+					gTmpArr[tmpel.attr('id')]={'left':elx,'top':ely};
+					//gsize запомним расстояния от текущей точки
+					if (gsize){
+						//old=cx-selx
+						gTmpArr[tmpel.attr('id')]={'left':elx-mapposcx,'top':ely-mapposcy};
+					}
 				});
 				//console.log(gTmpArr);
 			}
@@ -1106,9 +1112,14 @@ $(document).ready(function() {
 						gcy=(parseInt(event.pageY)-mapposy)/document.body.clientHeight;
 						//shift
 						if (event.shiftKey){
-							gcy=gcx;
+							if (gcy>gcx){
+								gcx=gcy;
+							}
+							else{
+								gcy=gcx;
+							}
 						}
-						console.log('Рост у.е. '+gcx);
+						//console.log('Рост у.е. '+gcx);
 					}
 					else if (gmove)
 					{
@@ -1122,9 +1133,10 @@ $(document).ready(function() {
 							var tmpel=$('#'+keyindex);
 							
 							if (gsize){
-								cx=gTmpArr[tmpel.attr('id')].left*(gcx+1);
-								cy=gTmpArr[tmpel.attr('id')].top*(gcy+1);
-							console.log('Итог '+cx);
+								//x=selx+(old*a)
+								cx=mapposcx+gTmpArr[tmpel.attr('id')].left*(gcx+1);
+								cy=mapposcy+gTmpArr[tmpel.attr('id')].top*(gcy+1);
+								//console.log('Итог '+cx);
 							}else
 							{
 								cx=gTmpArr[tmpel.attr('id')].left+gcx;
@@ -1707,4 +1719,4 @@ $(document).ready(function() {
 	}	
 	
 	//работа с куками
-});																									 			
+});																									 					
