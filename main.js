@@ -1,3 +1,5 @@
+//import { myValue } from "./lang/ru/index.js";
+//import { myValue } from "/modules/my-module.js";
 var keymove=0;
 var gmove=0; //global move - перемещение
 var gsize=0; //gloval size - изменения расстояния всех значков
@@ -12,8 +14,10 @@ var invIndex=0;
 	&#9999;
 	https://pixelplus.ru/samostoyatelno/stati/vnutrennie-faktory/tablica-simvolov-unicode.html
 */
+
+
 $(document).ready(function() {
-	var mapcircle=0; //признак что курсор находится на точке-круге.
+	var mapcircle=0; //признак что курсор находится на точке-круге, метке на карте.
 	var maptarget=null;
 	var movehist=0; //режим перемещения элементов истории
 	var mapposx=null,mapposy=null; //старые координаты точки mouse event
@@ -21,7 +25,7 @@ $(document).ready(function() {
 	var circlept=0;  //признак что включен информационный прямоугольник
 	var Selectpt=0;  //признак что включен прямоугольник выделения
 	var defaultProfile=0; //профиль по дефолту.
-	var profileIndex=defaultProfile; //текущий профиль.
+	var profileIndex=defaultProfile; //текущий профиль (список справа).
 	var gTmpArr={}; //старые координаты, при чем множественные, для выделенных точек или для всех точек.
 	var selectedArr=[]; //массив выделенных элементов
 	var historyName; //имя массива истории
@@ -30,35 +34,169 @@ $(document).ready(function() {
 	var activeongroups=1; //включать ли категории (в начале и при переключении профилей-карт)
 	var lastId; //последний ид точки-круга (для применения действий над ним)
 	var histMoveNum; //номер перемещаемого элемента
+	var defaultLang='RU' //язык по дефолту.
+	var langScript; //скрипт языка
+	var settingsName; //название настроек
+	var globhist; //массив истории
+	var globSettings; //массив настроек
+	var mapSettings; //скрипт настроек
 	
 	//загрузка истории
-	historyName=$('.historyName').text();
-	var globhist=getCookie(historyName);
-	try {
-		//globhist=[];
-		globhist = JSON.parse(globhist);
-		//Если история есть заполняем группу история всеми элементами.
-		//console.log(globhist);
-		//loadhist(); !!! история загружается в другом месте profile select
-	}
-	catch(e) {
-		//console.log(e); // error in the above string (in this case, yes)!
-		console.log('Данных истории в куках нет');
-		globhist=[];
-		
-	}
-	if (globhist===null){
-		console.log('История не существует');
-		globhist=[];
-	}
-	init();
+	//historyName=$('.historyName').text();
+	historyName=$('.gameName').text()+'hist';
+	settingsName=$('.gameName').text()+'settings';
+	
+	
+	//Загрузка настроек
+	loadSettings();
+	//Установка настроек
+	setupSettings();
+	//загрузка карт
+	loadMAPSettings(defaultLang).then((result1) => {
+		console.log(result1);
+		init();
+	})
 	
 	function init(){
+		//Загрузка истории
+		loadHistory();
 		//Выводим группы
 		$('#flyProf .list-group-item').not('.custom').remove();
 		$('#flyProf .mainfly').append(wrapGroups());
 		
 		profileSelect(defaultProfile);
+		
+		//Включаем язык
+		$('.langSelect .list-group-item').each(function(){
+			if (this.innerText.trim()==defaultLang){
+				this.classList.add('active')
+			}
+		})
+		//меняем язык
+		langSelect(defaultLang);
+	}
+	function setupSettings(){
+		if (globSettings['lang']){
+			defaultLang=globSettings['lang'];
+		}
+	}
+	
+	function loadSettings(){
+		globSettings=localStorage.getItem(settingsName);
+		try {
+			globSettings = JSON.parse(decodeURIComponent(globSettings));
+		}
+		catch(e) {
+			console.log('Настройки неверный формат / settings corrupted');
+			globSettings={};
+			
+		}
+		if (globSettings===null){
+			console.log('Настроек нет / settings not found');
+			globSettings={};
+		}
+	}
+	function loadHistory(){
+		globhist=getCookie(historyName);
+		try {
+			//globhist=[];
+			globhist = JSON.parse(globhist);
+			//Если история есть заполняем группу история всеми элементами.
+			//console.log(globhist);
+			//loadhist(); !!! история загружается в другом месте profile select, тут загружать не надо
+		}
+		catch(e) {
+			//console.log(e); // error in the above string (in this case, yes)!
+			console.log('Данных истории в куках нет / history corrupted');
+			globhist=[];
+			
+		}
+		if (globhist===null){
+			console.log('История не существует / history not found');
+			globhist=[];
+		}
+	}
+	async function loadMAPSettings(langdir){
+		let path='./lang/'+langdir+'/settings.js';
+		
+		if (typeof(mapSettings)!='undefined'){
+			//уже есть, удаляем
+			mapSettings.remove();
+		}
+		
+		//load sctipt
+		mapSettings = document.createElement('script');
+		mapSettings.src = path;
+		//wait
+		return new Promise((resolve, reject) => {
+			mapSettings.onload = function() {
+				resolve("ок");
+			}		
+			document.body.append(mapSettings);
+		});
+	}
+	function langSelect(langdir){
+		//import
+		let path='./lang/'+langdir+'/index.js';
+		
+		if (typeof(langStr)!='undefined'){
+			//уже есть, удаляем
+			langScript.remove();
+		}
+		
+		//load sctipt
+		langScript = document.createElement('script');
+		langScript.src = path;
+		document.body.append(langScript);
+		//wait
+		langScript.onload = function() {
+			//replace
+			replaceLangStr(langStr);
+		}		
+	}
+	function replaceLangStr(langStr){
+		var lanobj=$(document.body).find('.langCh');
+		var langKey;
+		var oldlangstr;
+		
+		lanobj.each(function(){
+			var el=$(this);
+			var langOld=0;
+			var lanOldelem;
+			lanOldelem=$(this).find('.langOld');
+			
+			if (lanOldelem.length>0){
+				//если уже была обработка 
+				langOld=1;
+			}
+			
+			if (langOld){
+				langKey=lanOldelem.html();
+			}
+			else
+			{
+				langKey=this.innerText.trim();
+			}
+			
+			if (langKey in langStr){
+				fulllangstr='<span class="langNow">'+langStr[langKey]+'</span>'+'<span class="langOld">'+langKey+'</span>';
+				
+				if (langOld){
+					//если уже была обработка 
+					//el.find('.langNow').get(0).outerHTML='';
+					el.find('.langNow').remove();
+					langKey=lanOldelem.get(0).outerHTML;
+					this.innerHTML=this.innerHTML.replace(langKey,fulllangstr);
+				}
+				else
+				{
+					this.innerHTML=this.innerHTML.replace(langKey,fulllangstr);
+				}
+			}
+			else{
+				console.log(langKey);
+			}
+		});
 	}
 	function wrapGroups(active=0){
 		
@@ -111,6 +249,7 @@ $(document).ready(function() {
 		mainpic.css('top',Profiles[num].offsetTop);
 		$('.maingroups .list-group-item').remove();
 		$('.maingroups').append($(Profiles[num].GpoupList));
+		//Добавим иконку удаления групп
 		
 		
 		//Активация всех групп, кроме истории
@@ -387,17 +526,20 @@ $(document).ready(function() {
 		var mainpic=$('#mainpic');
 		var newel=tmpbtn.html();
 		newel = $.parseHTML( jQuery.trim(newel.replace(/#number#/gi, num)));
-		$(newel).css({'left':x,'top':y})
-		$(newel).attr('id',  preId+num );
-		$(newel).attr('title',  tname );
-		$(newel).addClass('cg'+onegroup);
+		newel=$(newel);
+		
+		newel.css({'left':x,'top':y});
+		newel.attr('id',  preId+num );
+		newel.attr('title',  tname );
+		newel.addClass('cg'+onegroup);
+		newel.data('group',onegroup);
 		
 		if (bonusClass.length){
-			$(newel).addClass(bonusClass);
+			newel.addClass(bonusClass);
 		}
 		
 		if (thide){
-			$(newel).addClass('hide');
+			newel.addClass('hide');
 		}
 		
 		mainpic.append(newel);
@@ -406,11 +548,17 @@ $(document).ready(function() {
 	$('#flyProf .container > h2').on('click',function(event){
 		$('.mainfly').toggleClass('hide');
 	});
+	function addslashes( str ) {
+		return (str + '').replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
+	}
 	
 	function drawpoint(tmppoint,ptarr,nindex){
 		ptprops='';
 		for (prop in self[Profiles[nindex].pointarr][tmppoint]) {
 			if (prop=='PointIndex'){continue;}
+			if (prop=='Name'){
+				self[Profiles[nindex].pointarr][tmppoint][prop]=addslashes(self[Profiles[nindex].pointarr][tmppoint][prop]);
+			}
 			ptprops+='\t\t';
 			ptprops+='\''+prop+'\' : \''+self[Profiles[nindex].pointarr][tmppoint][prop]+'\','+"\n";
 		}
@@ -534,8 +682,11 @@ $(document).ready(function() {
 		function drawpointCur(el,group){
 			var elemmap=$(el);
 			var curbtn='';
+			if (typeof(group)=='undefined' || group=='undefined'){
+				group=el.data('group');
+			}
 			curbtn+="\t"+'{'+"\n";
-			curbtn+="\t\t"+"'Name':'"+elemmap.attr('title')+"',"+"\n";
+			curbtn+="\t\t"+"'Name':'"+addslashes(elemmap.attr('title'))+"',"+"\n";
 			curbtn+="\t\t"+"'CoordX':'"+elemmap.css('left')+"',"+"\n";
 			curbtn+="\t\t"+"'CoordY':'"+elemmap.css('top')+"',"+"\n";
 			curbtn+="\t\t"+"'Groups':'"+"["+group+"]',"+"\n";
@@ -686,6 +837,56 @@ $(document).ready(function() {
 			
 		}
 	});
+	$('#flyaoMenu .list-group-item .newpoint').on('click',(event)=>{
+		//Новая точка
+		var desc = prompt("Описание:", 'new');
+		var group = prompt("Номер группы:",0);
+		//Координаты - центр карты
+		var mainpic=$('#mainpic');
+		var curscale=1;
+		if (typeof(Profiles[profileIndex].zoom)!=undefined){
+			//
+			curscale=Profiles[profileIndex].zoom;
+		}
+		//суть в том что zoom реально увеличивает как сказано, но jq показывает размер без зума.
+		//но точка поставленная в конец реальной ширины будет ровно с этой шириной, но трансформация центральной картинки увеличивает точку
+		//для уменьшения её к 20*20 используем обратный зум, но при этом она смещается, но это не влияет на координаты точки
+		//причем - 10 - пол ширины ощушается как полная ширина при зуме 1.9 - зум влияет и надо вычитать ещё меньше согласно зуму.
+		//проверил что зум вообще никак не влияет - 10 отлично работает как с зумом точки так и без
+		//var coordX=0;coordY=0;
+		var coordX=(mainpic.width()-20)/2;
+		//var coordX=(mainpic.width()*(curscale))/2-(20/2);
+		var coordY=(mainpic.height()-20)/2;
+		//var coordY=(mainpic.height()*(curscale))/2-(20/2);	
+		//в памяти
+		if (desc && group){
+			self[Profiles[profileIndex].pointarr].push({'Name':desc,'CoordX':coordX+'px','CoordY':coordY+'px','Groups':'['+group+']'});
+			pointsarr.push({'Name':desc,'CoordX':coordX+'px','CoordY':coordY+'px','Groups':'['+group+']'});
+			//перезагрузим грузим профиль ? profileSelect(profileIndex)
+			//Новый номер
+			var numi=mainpic.find('.mycircle').length;
+			
+			//не с 0
+			if (Profiles[profileIndex].StartIndex>0){
+				numi+=Profiles[profileIndex].StartIndex;
+			}
+			//в списке
+			placelisttext(group,desc,numi,1,1);
+			UpdateCountGr(group);
+			//на карте
+			var bonusClass='';
+			//Добавляем очищалку стиля для групп точек
+			var tmpgroup=$('.maingroups .list-group-item:not(.autohist)').eq(group);
+			if (tmpgroup.get(0).hasAttribute('custombg') || tmpgroup.get(0).hasAttribute('customstyle')){
+				//очищалка
+				//mainpic.find('.cg'+z).addClass('ClearCg');
+				bonusClass='ClearCg';
+			}
+			//Новая кнопка
+			placebtn(coordX,coordY,numi,desc,0,group,bonusClass);
+			
+		}
+	});
 	$('#flyaoMenu .list-group-item .newgroup').on('click',(event)=>{
 		//Новая группа
 		var el=$(event.target);
@@ -744,10 +945,34 @@ $(document).ready(function() {
 			this.style.top=newpoint.y+'px';
 		});
 	});	
-	$('#flycMenu .list-group-item-text').on('click',(event)=>{
-		let zobj=event.target.dataset.action;
-		if ($(event.target).hasClass('active')){
-			$(event.target).removeClass('active');
+	$('.langSelect .list-group-item').on('click',function(){
+		var el=$(this);
+		//select one
+		el.siblings().removeClass('active');
+		//on this
+		el.toggleClass('active');
+		defaultLang=this.innerText.trim();
+		globSettings['lang']=defaultLang;
+		//меняем язык
+		langSelect(defaultLang);
+		//hide tab
+		el.parent().toggleClass('hide');
+		//обновляем настройки
+		localStorage.setItem(settingsName, encodeURIComponent(JSON.stringify(globSettings)));
+		//перезагружаем карту
+		loadMAPSettings(defaultLang).then((result1) => {
+			//Выводим группы
+			$('#flyProf .list-group-item').not('.custom').remove();
+			$('#flyProf .mainfly').append(wrapGroups());
+			profileSelect(defaultProfile);
+		})
+	});
+	$('#flycMenu .list-group-item-text').on('click',function(event){
+		let zobj=this.dataset.action;
+		let el=$(this);
+		
+		if (el.hasClass('active')){
+			el.removeClass('active');
 			if (zobj){
 				//keymove=0;
 				self[zobj]=0;
@@ -759,7 +984,7 @@ $(document).ready(function() {
 		}
 		else
 		{
-			$(event.target).addClass('active');
+			el.addClass('active');
 			if (zobj){
 				//keymove=1;
 				self[zobj]=1;
@@ -804,6 +1029,88 @@ $(document).ready(function() {
 		}
 		
 	})
+	$('#tmpContMenu .list-group-item .chgroup').on('click',function(e){
+		//старый номер группы
+		var parentel=$(this).closest('#tmpContMenu');
+		var numi=parentel.data('itemId');
+		console.log(numi);
+		var objMetka=$('#mainpic').find('#'+preId+numi);
+		
+		var tmpGroup;
+		//ищем прошлую группу в pointsarr по номеру и от туда берем номер группы
+		try {
+			
+			tmpGroup=$.parseJSON(pointsarr[numi-1].Groups);
+			tmpGroup=(tmpGroup.length)?tmpGroup[0]:0;
+		}
+		catch(e) {
+			console.log('Не удалось определить группу');
+			tmpGroup=null;
+		}
+		
+		var group = prompt("Номер группы:", tmpGroup);
+		var clsActive,clsHide,olddesc;
+		if (group != null && tmpGroup!==null) {
+			//Находим старую запись и удаляем её
+			var flylist=$('#flylist');
+			var curfly=flylist.find('.list-group-item:eq('+tmpGroup+') .list-group-item-text');
+			curfly.each(function(index,element) {
+				if ($(this).data('id')==preId+numi){
+					//Нашли, удаляем
+					clsActive=$(this).hasClass('active');
+					clsHide=$(this).hasClass('hide');
+					olddesc=objMetka.attr('title');
+					$(this).remove();
+					//добавляем новую запись в другую группу но с тем же номером
+					placelisttext(group,olddesc,numi,clsActive,clsHide);
+					UpdateCountGr(tmpGroup);
+					UpdateCountGr(group);
+					//А также обновляем сведениия в pointsarr
+					pointsarr[numi-1].Groups='['+group+']';
+					//А также меняем класс точки
+					objMetka.removeClass('cg'+tmpGroup).addClass('cg'+group);
+					//убираем меню
+					parentel.toggleClass('hide');
+					return false;
+				}
+			});
+			
+		}
+	});
+	$('#tmpContMenu .list-group-item .delpoint').on('click',function(e){
+		//удаляем точку на карте
+		//старый номер группы
+		var parentel=$(this).closest('#tmpContMenu');
+		var numi=parentel.data('itemId');
+		var el=$('#'+preId+numi);
+		if (el.length){
+			//удаляем саму точку на карте
+			el.remove();
+			//удаляем запись в списке групп
+			var tmpGroup;
+			//ищем прошлую группу в pointsarr по номеру и от туда берем номер группы
+			try {
+				
+				tmpGroup=$.parseJSON(pointsarr[numi-1].Groups);
+				tmpGroup=(tmpGroup.length)?tmpGroup[0]:0;
+			}
+			catch(e) {
+				console.log('Не удалось определить группу');
+				tmpGroup=null;
+			}
+			var flylist=$('#flylist');
+			var curfly=flylist.find('.list-group-item:eq('+tmpGroup+') .list-group-item-text');
+			curfly.each(function(index,element) {
+				if ($(this).data('id')==preId+numi){
+					//Нашли, удаляем
+					$(this).remove();
+					return false; //break;
+				}
+			});
+			parentel.toggleClass('hide');
+			//удаляем её из истории - не сильно надо.
+		}
+	});
 	
 	$('#mainpic').mousedown(function(event){
 		var searchstr='';
@@ -814,60 +1121,34 @@ $(document).ready(function() {
 		if (event.shiftKey && mapcircle==1 && !gsize){
 			//хотим изменить маркер
 			
-			//старый номер группы
-			var numi=$(event.target).attr('id').replace( /[^\d]/g, "" );
 			
 			var desc = prompt("Описание:", event.target.title) || event.target.title;
-			if (event.ctrlKey){
-				//Меняем группу
-				
-				var tmpGroup;
-				//ищем его в pointsarr по номеру и от туда берем номер группы
-				try {
-					
-					tmpGroup=$.parseJSON(pointsarr[numi-1].Groups);
-					tmpGroup=(tmpGroup.length)?tmpGroup[0]:0;
-				}
-				catch(e) {
-					console.log('Не удалось определить группу');
-					tmpGroup=null;
-				}
-				
-				var group = prompt("Номер группы:", tmpGroup);
-				var clsActive,clsHide;
-				if (group != null && tmpGroup!==null) {
-					//Находим старую запись и удаляем её
-					var flylist=$('#flylist');
-					var curfly=flylist.find('.list-group-item:eq('+tmpGroup+') .list-group-item-text');
-					curfly.each(function(index,element) {
-						//newel.data('id',preId+numpoint);
-						if ($(this).data('id')==preId+numi){
-							//Нашли, удаляем
-							clsActive=$(this).hasClass('active');
-							clsHide=$(this).hasClass('hide');
-							$(this).remove();
-							//добавляем новую запись в другую группу но с тем же номером
-							placelisttext(group,desc,numi,clsActive,clsHide);
-							UpdateCountGr(tmpGroup);
-							UpdateCountGr(group);
-							//А также обновляем сведениия в pointsarr
-							pointsarr[numi-1].Groups='['+group+']';
-							//А также меняем класс точки
-							$(event.target).removeClass('cg'+tmpGroup).addClass('cg'+group);
-							return false;
-						}
-					});
-					
-				}
-			}
 			if (desc != null) {
 				event.target.title=desc;
 			}
+			
 		}
-		if (event.ctrlKey){
+		else if(event.ctrlKey && mapcircle==1 && !gsize){
+			//Меняем группу, не меняем, будем выводить меню с выбором
+			let el=$('#tmpContMenu');
+			let elh=el.outerHeight();
+			let menuheight=0;
+			el.toggleClass('hide');
+			el.css('left',event.pageX+'px');
+			menuheight=event.pageY;
+			//далее передвигаем с учетом экрана, если позволяет - справа от курсора, если нет - справа будет низ меню
+			if (event.pageY+elh>$('body').height()){
+				menuheight-=elh;
+			}
+			el.css('top',menuheight+'px');			
+			el.data('itemId',$(event.target).attr('id').replace( /[^\d]/g, "" ));
+		}
+		if (event.ctrlKey && mapcircle==0){
+			//активация лупы подсказки
 			//console.log(event);
 			//activate circlept
 			if (circlept){
+				//отключаем
 				circlept=0;
 				maptarget.toggleClass('active');
 				
@@ -885,6 +1166,7 @@ $(document).ready(function() {
 			}
 		}
 		if (event.shiftKey && !mapcircle){
+			//Режим выделения
 			if (Selectpt){
 				if (selectedArr.length){
 					selectedArr=selectedArr.add(inWindow(maptarget,$('#mainpic .mycircle').not('.hide')));
@@ -996,7 +1278,7 @@ $(document).ready(function() {
 					numi+=Profiles[profileIndex].StartIndex;
 				}
 				
-				pointsarr.push({'Name':desc,'CoordX':oldx,'CoordY':oldy,'Groups':'['+group+']'});
+				pointsarr.push({'Name':desc,'CoordX':oldx+'px','CoordY':oldy+'px','Groups':'['+group+']'});
 				
 				//надо ставить уже активный маркер
 				//Новый текст
@@ -1018,7 +1300,7 @@ $(document).ready(function() {
 				
 			}
 		}
-		if ((event.ctrlKey && event.shiftKey) && event.buttons>0 && mapposcx && mapposx && !circlept){
+		if ((event.ctrlKey && event.shiftKey) && mapposcx && mapposx && !circlept){
 			//Отмена, возвращаем старые координаты
 			maptarget.css('left',mapposcx+'px');
 			maptarget.css('top',mapposcy+'px');
@@ -1240,7 +1522,7 @@ $(document).ready(function() {
 	$('.maingroups').on('click','.list-group-item-heading .text',function(){
 		var el=$(this);
 		var newselarr=[];
-		var par=el.parent().parent();
+		var par=el.parent().parent(); //.list-group-item
 		if (event.shiftKey){
 			//Выделяем точки группы
 			par.find('.list-group-item-text').each(function(){
@@ -1248,6 +1530,66 @@ $(document).ready(function() {
 				selectedArr.push(mapelem);
 			});
 			$(selectedArr).addClass('ptSelect');
+			event.preventDefault();
+			return;
+		}
+		if (event.ctrlKey){
+			//Переименовываем группу
+			//Найдем группу
+			var sibs=par.parent().find('.list-group-item').not('.autohist');
+			var groupIndex=sibs.index(par);
+			if (groupIndex>=0){
+				var gOldText=$(Profiles[profileIndex].GpoupList).find('.text').eq(groupIndex).text().trim();
+				var gOldHtml=$(Profiles[profileIndex].GpoupList).find('.text').get(groupIndex).outerHTML;
+				var gName = prompt("Название:", gOldText);
+				if (gOldText!=gName && gName != null){
+					var gNewHtml=gOldHtml.replace(gOldText,gName);
+					//заготовка готова, меняем в профиле, в памяти
+					Profiles[profileIndex].GpoupList=Profiles[profileIndex].GpoupList.replace(gOldHtml,gNewHtml);
+					//меняем в списке
+					el.html(el.html().replace(gOldText,gName));
+				}
+			}
+			event.preventDefault();
+			return;
+		}
+		if (event.altKey){
+			//Удалим группу
+			//Найдем группу
+			var sibs=par.parent().find('.list-group-item').not('.autohist');
+			var groupIndex=sibs.index(par);
+			if (groupIndex>=0){
+				//var gOldText=$(Profiles[profileIndex].GpoupList).find('.text').eq(groupIndex).text().trim();
+				if (confirm('Удалить / delete ?')) {
+					var tmpgroup=Profiles[profileIndex].GpoupList;
+					var pos1=tmpgroup.indexOf($(tmpgroup).filter('.list-group-item').get(groupIndex).outerHTML);
+					var pos2=tmpgroup.indexOf($(tmpgroup).filter('.list-group-item').get(groupIndex+1).outerHTML);
+					if (pos1 && pos2){
+						//удаляем в памяти
+						Profiles[profileIndex].GpoupList=tmpgroup.replace(tmpgroup.slice(pos1, pos2),'');
+					}
+					else
+					{
+						console.log('pos not correct');
+					}
+					//Profiles[profileIndex].GpoupList=Profiles[profileIndex].GpoupList.replace(gOldHtml,gNewHtml);
+					console.log();
+					/*
+						selectedElement = $(".example").contents(); 
+						
+						textNodes = selectedElement.filter(function () 
+						{ 
+						return this.nodeType === Node.TEXT_NODE; 
+						}); 
+						как будем действовать:
+						нужно убрать всё в определенном промежутке replace
+						т.е. от 1 до 2 если выбрана 1 и если последняя то от последней до конца
+						ищем текущий html и +1, находим позиции в начальном массиве групп, вырезаем отрезок
+					*/
+					//удаляем в списке
+					par.remove();
+				}
+			}
 			event.preventDefault();
 			return;
 		}
@@ -1418,13 +1760,20 @@ $(document).ready(function() {
 	);				
 	$('.btall').on('click',function(e){
 		var par=$('.list-group');
-		if ($(e.target).hasClass('allon')){
+		var el=$(e.target);
+		if (el.hasClass('langNow')){
+			//ошибка, не тот уровень
+			//el=el.parent();
+			el=el.parents('.allon, .alloff');
+		}
+		
+		if (el.hasClass('allon')){
 			//active all
 			var lhead=par.find('.list-group-item-heading').addClass('active');
 			var ltext=par.find('.list-group-item-text').addClass('active');
 			$('#mainpic .mycircle').removeClass('hide');
 		}
-		else
+		else if (el.hasClass('alloff'))
 		{
 			//deactivate all
 			var lhead=par.find('.list-group-item-heading').removeClass('active');
@@ -1518,7 +1867,7 @@ $(document).ready(function() {
 		UpdateCountGr(els.eq(0).data('group'));
 	});
 	
-	$('#flylist').on('click','.list-group-item-text .icondel',function(){
+	$('#flylist').on('click','.list-group-item.autohist .list-group-item-text .icondel',function(){
 		//delete from history
 		var par=$(this).parent();
 		var dataid=par.data('id')+profSym+self['Profiles'][profileIndex].pointarr;
@@ -1536,6 +1885,9 @@ $(document).ready(function() {
 		}
 	});
 	$('.helpp > div > h2').on('click',function(){
+		$(this).next().toggleClass('hide');
+	});
+	$('.langSelect .langCh').on('click',function(){
 		$(this).next().toggleClass('hide');
 	});
 	//searchbtn
@@ -1642,9 +1994,6 @@ $(document).ready(function() {
 		//расстояние до кнопки когда она уже уменьшилась
 		var bonusbtn=(20*(curscale-1))/2;
 		
-		//$('#mainpic').css('left',sx/2+((mainpic.width()*(curscale-1))/2)-(btnx*curscale)-bonusbtn+'px')
-		//$('#mainpic').css('top',sy/2+((mainpic.height()*(curscale-1))/2)-(btny*curscale)-bonusbtn+'px');
-		
 		//((изначальная ширина*scale)-изначальная ширина)/2 - то что вышло за пределы с одного бока
 		//calc(928.5px + 278.25px - (217px * 3.1)-21px )
 		
@@ -1671,10 +2020,7 @@ $(document).ready(function() {
 	
 	//работа с куками
 	function getCookie(name) {
-		/*var matches = document.cookie.match(new RegExp(
-			"(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
-		));*/
-		//if (!matches){}
+		//устаревшее
 		matches=[];
 		matches[1]=localStorage.getItem(historyName);
 		ret=matches ? decodeURIComponent(matches[1]) : undefined;
@@ -1683,40 +2029,17 @@ $(document).ready(function() {
 		
 	}
 	function setCookie(name, value, options={expires:60*60*24*30,path:'/'}) {
-		/*options = options || {};
-			
-			var expires = options.expires;
-			
-			if (typeof expires == "number" && expires) {
-			var d = new Date();
-			d.setTime(d.getTime() + expires * 1000);
-			expires = options.expires = d;
-			}
-			if (expires && expires.toUTCString) {
-			options.expires = expires.toUTCString();
-		}*/
-		
+		//устаревшее
 		value = encodeURIComponent(value);
 		
-		/*var updatedCookie = name + "=" + value;
-			
-			for (var propName in options) {
-			updatedCookie += "; " + propName;
-			var propValue = options[propName];
-			if (propValue !== true) {
-			updatedCookie += "=" + propValue;
-			}
-		}*/
 		
 		//document.cookie = updatedCookie;
 		localStorage.setItem(name, value);
 	}
 	function deleteCookie(name) {
+		//устаревшее
 		localStorage.removeItem(name);
-		/*setCookie(name, "", {
-			expires: -1
-		})*/
 	}	
 	
 	//работа с куками
-});																									 					
+});																									 																									
