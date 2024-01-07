@@ -5,6 +5,7 @@ var langStr={
 	ACT_GLOBALMOVE:'Global move',
 	ACT_GLOBALSIZE:'Global size',
 	ACT_YONGUP:'Young numbers are flowing up.',
+	ACT_BUILDROUTE:'Build a route',
 	FASTACT:'Fast actions:',
 	FASTACT_SAVEMAP:'Save map position and size in memory.',
 	FASTACT_NEWEMAP:'Create a new map (based on the current one).',
@@ -97,6 +98,9 @@ var langStr={
 	Option to move with keys - the point (element) will be moved using the arrow keys on keyboard, there is also a hotkey in brackets. \
 	<br>\
 	In the action menu, it is now possible to show younger numbers on top of older ones. \
+	<br>\
+	option build a route - builds a route based on points on the map, also writes the last removed point to the beginning \
+	allows you to change the size using the [] keys \
 	<br>---Quick Actions<br> \
 	Saving the position of current map (and other maps) in memory - saves the position for profile settings, for convenience, also saves zoom,<br> \
 	new map (profile) - creates a new profile in memory with one new label, convenient if there are no cards at all or if you need to duplicate the current one<br> \
