@@ -668,6 +668,14 @@ $(document).ready(function() {
 		
 	})
 	$('body').keypress(function(event){
+		if (event.shiftKey && event.keyCode==68){
+			//отменяем выделение
+			if (selectedArr.length){
+				$(selectedArr).removeClass('ptSelect');
+				selectedArr=[];
+			}
+			event.preventDefault();
+		}
 		if (typeof(routeShow)!='undefined' && routeShow){
 			var changes=0;
 			if (event.keyCode==91 || event.keyCode==1093){
@@ -719,13 +727,6 @@ $(document).ready(function() {
 				//keymove (k)
 				keymove=1-keymove;
 				$('#flycMenu .list-group-item-text[data-action="keymove"]').toggleClass('active');
-			}
-			if (event.shiftKey && event.keyCode==68){
-				//отменяем выделение
-				if (selectedArr.length){
-					$(selectedArr).removeClass('ptSelect');
-					selectedArr=[];
-				}
 			}
 			console.log(event.keyCode);
 		}
@@ -1013,7 +1014,8 @@ $(document).ready(function() {
 			var lastHist=globhist[globhist.length-1].split(profSym);
 			if (lastHist[1]==self['Profiles'][profileIndex].pointarr){
 				//и если это текущий профиль то добавляем элемент в список
-				curRoute=$('#'+lastHist[0]).add(curRoute);
+				//curRoute=$('#'+lastHist[0]).add(curRoute);
+				curRoute=jQuery.merge($('#'+lastHist[0]),curRoute)
 				options.firstHist=1;
 			}
 		}
@@ -1565,9 +1567,10 @@ $(document).ready(function() {
 	});
 	$('#flylist').on('click','.list-group-item-text .icon',function(){
 		var el=$(this);
-		var par=el.parent();
+		var par=el.parent(); //.list-group-item-text
 		var groupnum=par.data('group');
 		if (par.hasClass('active')){
+			//Скрываем
 			par.removeClass('active');
 			$('#'+par.data('id')).addClass('hide');
 			//off - add to history
@@ -1577,11 +1580,11 @@ $(document).ready(function() {
 				//var dataid=par.data('id')+profSym+profileIndex;
 				//get number profile by pointarr
 				var dataid=par.data('id')+profSym+self['Profiles'][profileIndex].pointarr;
-				var dataid2=par.data('id');
 				//Чтобы не было дублей
-				if (globhist!==null && !globhist.includes(dataid) && !globhist.includes(dataid2)){
+				if (globhist!==null && !globhist.includes(dataid)){
 					var newel=$($.parseHTML(jQuery.trim(par.get(0).outerHTML)));
-					newel.data('id',dataid2);
+					newel.data('id',par.data('id'));
+					newel.data('prof',self['Profiles'][profileIndex].pointarr);
 					if (!$('#flylist .autohist .list-group-item-heading .text').hasClass('closed')){
 						//скрывалось в истории когда она закрыта
 						newel.removeClass('hide');
@@ -1647,14 +1650,16 @@ $(document).ready(function() {
 				$(this).removeClass('hMove');
 			}
 			else{
+				//первый раз
 				movehist=1;
 				var el=$(this);
 				var elstr=el.data('id')+profSym+el.data('prof');
 				histMoveNum=globhist.indexOf(elstr);
 			}
-			}else{
+		}
+		else{
 			if (movehist==1){
-				//просто отмена
+				//перемещение
 				movehist=0;
 				var el=$(this);
 				el.removeClass('hMove');
