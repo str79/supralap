@@ -22,7 +22,7 @@
 		<div class="helpp">
 			<div class="container">
 				<div class="langSelect">
-					<h2 class="langCh" >LANG</h2>
+					<h2 class="langCh unselectable" >LANG</h2>
 					<div class="boxsel list-group hide">
 						<div class="list-group-item">
 							<span class="icon"></span>
@@ -34,11 +34,11 @@
 						</div>
 					</div>
 				</div>
-				<h2 class="langCh" >HELP</h2>
+				<h2 class="langCh unselectable" >HELP</h2>
 				<div class="list-group hide">
 					<div href="#" class="list-group-item">
 						<p class="list-group-item-text">
-							v=2.003<br>
+							v=2.008d<br>
 							<span class="langCh">
 								HELP_TEXT
 							</span>
@@ -99,7 +99,7 @@
 		</div>		
 		<div id="flyProf">
 			<div class="container">
-				<h2 class="dib langCh">MAPS</h2>
+				<h2 class="dib langCh unselectable">MAPS</h2>
 				<div class="searchbtn dib">&#128270;</div>
 				<div class="menuaction dib">&#x1F7C8;</div>
 				<div class="oneaction dib">&#9889;</div>
@@ -138,11 +138,27 @@
 				</div>
 			</div>
 		</div>
-		<!-- образец для элемента текста -->
+		<!-- образец для элемента текста группы -->
+		<div id="tmpHistname" class="langCh hide">
+			HISTNAME
+		</div>
 		<div id="tmpGroup" class="hide">
 			<div href="#" class="list-group-item">
 				<h4 class="list-group-item-heading"><span class="icon"></span><span class="text">&nbsp;#text#</span></h4>
 			</div>
+		</div>
+		<div id="tmpContGroupMenu" class="hide">
+			<div href="#" class="list-group-item"> 
+				<h4 class="langCh list-group-item-heading">GROUPCMENU</h4> 
+				<p class="langCh list-group-item-text groupmove">
+					GROUPCMENU_MOVE
+					<span class="runicon"></span>
+				</p>
+				<p class="langCh list-group-item-text groupremove">
+					GROUPCMENU_REMOVE
+					<span class="runicon"></span>
+				</p>
+			</div>		
 		</div>
 		<div id="tmpContMenu" class="hide">
 			<div href="#" class="list-group-item"> 
@@ -156,7 +172,7 @@
 					<span class="runicon"></span>
 				</p>
 			</div>		
-		</div>				
+		</div>
 		<div id="tmplist" class="hide">
 			<p class="list-group-item-text">
 				<span class="icon"></span>

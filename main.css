@@ -32,6 +32,7 @@ body .unselectable *{
 	position: fixed;
 	top: 0;
 	left: 0;
+	z-index: 1;
 }
 #flylist .container > h2{
 	background: #fff5;
@@ -320,6 +321,10 @@ body .hidden{
 	border-bottom: 2px solid #00b;
 	display: inline-block;
 }
+.moveGroup{
+	border-bottom: 2px solid #00b;
+	display: inline-block;
+}
 #tmpContMenu{
 	display: inline-block;
 	position: absolute;
@@ -339,6 +344,28 @@ body .hidden{
 	padding:0 10px;
 }
 #tmpContMenu .list-group-item-text:active{
+	background: #e8e8e8;
+	padding:0;
+}
+#tmpContGroupMenu{
+	display: inline-block;
+	position: absolute;
+	z-index: 1;
+}
+#tmpContGroupMenu.hide{
+	display: none;
+}
+#tmpContGroupMenu .list-group-item{
+	cursor: auto;
+}
+#tmpContGroupMenu .list-group-item-text{
+	cursor: pointer;
+}
+#tmpContGroupMenu .list-group-item-text:hover{
+	background: #c8c8c8;
+	padding:0 10px;
+}
+#tmpContGroupMenu .list-group-item-text:active{
 	background: #e8e8e8;
 	padding:0;
 }
