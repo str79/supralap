@@ -18,6 +18,7 @@ $(document).ready(function() {
 	var mapcircle=0; //признак что курсор находится на точке-круге, метке на карте.
 	var maptarget=null;
 	var movehist=0; //режим перемещения элементов истории
+	var moveGroup=0; //режим перемещения групп
 	var mapposx=null,mapposy=null; //старые координаты точки mouse event
 	var mapposcx=null,mapposcy=null; //старые координаты точки
 	var circlept=0;  //признак что включен информационный прямоугольник
@@ -59,7 +60,6 @@ $(document).ready(function() {
 		//Выводим группы
 		$('#flyProf .list-group-item').not('.custom').remove();
 		$('#flyProf .mainfly').append(wrapGroups());
-		profileSelect(defaultProfile);
 		//Включаем язык
 		$('.langSelect .list-group-item').each(function(){
 			if (this.innerText.trim()==defaultLang){
@@ -67,7 +67,11 @@ $(document).ready(function() {
 			}
 		})
 		//меняем язык
-		langSelect(defaultLang);
+		langSelect(defaultLang).then((data)=>{
+			console.log(data);
+			//подгружаем профиль
+			profileSelect(defaultProfile);
+		});
 	}
 	function setupSettings(){
 		if (globSettings['lang']){
@@ -119,7 +123,11 @@ $(document).ready(function() {
 		//wait
 		return new Promise((resolve, reject) => {
 			mapSettings.onload = function() {
-				resolve("ок");
+				resolve("maps/profiles loaded");
+				if (typeof(Profiles)=='undefined'){
+					//хотя-бы пустой массив
+					Profiles=[];
+				}
 			}		
 			document.body.append(mapSettings);
 		});
@@ -135,11 +143,15 @@ $(document).ready(function() {
 		langScript = document.createElement('script');
 		langScript.src = path;
 		document.body.append(langScript);
-		//wait
-		langScript.onload = function() {
-			//replace
-			replaceLangStr(langStr);
-		}		
+		//wait - будем ждать
+		return new Promise((resolve, reject) => {
+			langScript.onload = function() {
+				resolve("Язык загружен");
+				replaceLangStr(langStr);
+			}		
+			document.body.append(mapSettings);
+		});
+		
 	}
 	function replaceLangStr(langStr){
 		var lanobj=$(document.body).find('.langCh');
@@ -180,7 +192,14 @@ $(document).ready(function() {
 			}
 		});
 	}
+	function wrapMainGroups(ghtml){
+		//для групп текущего профиля maingroups
+		var newel=$('#tmpGroup').html();
+		let newhtml=$($.parseHTML( jQuery.trim(newel.replace(/#text#/gi, ghtml))));
+		return newhtml;
+	}
 	function wrapGroups(active=0){
+		//для карт/профилей
 		var countpta=Profiles.length;
 		var tmpGroup=$('#tmpGroup');
 		var newel=tmpGroup.html();
@@ -197,13 +216,32 @@ $(document).ready(function() {
 		}
 		return newgroups;
 	}
-	$('#flyProf').on('click','.list-group-item:not(.custom)',function(){
+	$('#flyProf').on('click','.list-group-item:not(.custom)',function(e){
 		var el=$(this);
-		var sibs=el.parent().find('.list-group-item');
-		sibs.removeClass('active');
-		el.addClass('active');
-		profileIndex=sibs.index(el);
-		profileSelect(profileIndex);
+		var elPar=el.parent();
+		var sibs=elPar.find('.list-group-item');
+		if (e.shiftKey){
+			//1. найдем карту
+			var idMap=+$(el).data('id');
+			var mapOldText=Profiles[idMap].Name;
+			//Переименовываем карту
+			var newName = prompt("Название:", mapOldText);
+			if (mapOldText!=newName && newName != null){
+				//2. меняем внутри
+				Profiles[idMap].Name=newName;
+				//3. меняем визуально
+				let newHtml=el.find('.text').html().replace(mapOldText,newName);
+				el.find('.text').html(newHtml);
+				//console.log('map rename '+el.get(0));
+			}
+			event.preventDefault();
+		}
+		else{
+			sibs.removeClass('active');
+			el.addClass('active');
+			profileIndex=sibs.index(el);
+			profileSelect(profileIndex);
+		}
 	})
 	function profileSelect(num){
 		var mainpic=$('#mainpic');
@@ -221,12 +259,20 @@ $(document).ready(function() {
 		mainpic.css('left',Profiles[num].offsetLeft);
 		mainpic.css('top',Profiles[num].offsetTop);
 		$('.maingroups .list-group-item').remove();
-		$('.maingroups').append($(Profiles[num].GpoupList));
+		//Добавление групп, массив групп
+		var groupscnt=Profiles[num].GpoupList.length;
+		var groupsHtml=$('');
+		for (z=0;z<groupscnt;z++){
+			//сразу имя
+			groupsHtml=groupsHtml.add(wrapMainGroups(Profiles[num].GpoupList[z]));
+		}
+		//и история
+		groupsHtml=groupsHtml.add(wrapMainGroups($('#tmpHistname .langNow').html()).addClass('autohist'));
+		$('.maingroups').append(groupsHtml);
 		//Добавим иконку удаления групп
 		//Активация всех групп, кроме истории
 		if (activeongroups){
 			//active all
-			//надо ли?
 			$('.maingroups .list-group-item:not(.autohist) .list-group-item-heading').addClass('active');
 		}
 		//замена точек 
@@ -490,7 +536,7 @@ $(document).ready(function() {
 		return '\t{'+"\n"+ptprops+'\t},'+"\n";
 	}
 	$('#flylist > .container > h2').on('click',function(event){
-		if (event.altKey){
+		if (event.ctrlKey){
 			$(this).siblings('.maingroups').toggleClass('hide');
 		}
 	});
@@ -498,7 +544,7 @@ $(document).ready(function() {
 		var curtext='',alton=0;
 		newGlobhist=[]; //временный массив истории для сортировки
 		if (event.altKey){
-			//Решим частичного вывода
+			//сортируем массив ключей профиля в историческом порядке
 			alton=1;
 		}
 		//массив соответствий группы и ид
@@ -552,8 +598,17 @@ $(document).ready(function() {
 			tmpproftext='';
 			for (prop in Profiles[nindex]) {
 				tmpval=Profiles[nindex][prop];
+				origTmpVal=Profiles[nindex][prop];
+				if (typeof(tmpval)=='undefined'){
+					//хотя-бы пустой массив
+					tmpval='';
+				}
 				tmpval=tmpval.toString().replace(/\t\t/g,String.fromCharCode(92)+"\n\t\t");
-				if (isNaN(tmpval)){
+				if (Array.isArray(origTmpVal)){
+					//GpoupList
+					tmpproftext+='\t\t';
+					tmpproftext+="'"+prop+"':"+JSON.stringify(origTmpVal).replaceAll('"','\'')+","+"\n";
+					}else if (isNaN(tmpval)){
 					tmpproftext+='\t\t';
 					tmpproftext+="'"+prop+"':'"+tmpval+"',"+"\n";
 				}
@@ -759,20 +814,23 @@ $(document).ready(function() {
 		var pName = prompt("Название:", event.target.title);
 		var pFile = prompt("Файл:", event.target.title);
 		var newIndex=Profiles.length;
+		var defGroup=['test group'];
+		//история
+		
 		if (pName!==false && pFile!==false &&
 			!pName.match(/^[^А-я\w\d\s_-]*$/) &&
 			!pFile.match(/^[^\w\d\s_-]*$/)
 			){
-			var pPt=pFile.replace(/(.*?)\..*/,'$1')+'Pt';
+			var pPt=pFile.replace(/(.*?)\..*/,'$1').replace(/^.*\/(.*?)$/,'$1')+'Pt';
 			Profiles[newIndex]={};
 			Profiles[newIndex]['Name']=pName;
 			Profiles[newIndex]['File']=pFile;
 			Profiles[newIndex]['pointarr']=pPt;
-			Profiles[newIndex]['zoom']=Profiles[profileIndex]['zoom'];
-			Profiles[newIndex]['StartIndex']=Profiles[profileIndex]['StartIndex'];
-			Profiles[newIndex]['offsetLeft']=Profiles[profileIndex]['offsetLeft'];
-			Profiles[newIndex]['offsetTop']=Profiles[profileIndex]['offsetTop'];
-			Profiles[newIndex]['GpoupList']=Profiles[profileIndex]['GpoupList'];
+			Profiles[newIndex]['zoom']=Profiles[profileIndex]['zoom'] || 1;
+			Profiles[newIndex]['StartIndex']=Profiles[profileIndex]['StartIndex'] || 1;
+			Profiles[newIndex]['offsetLeft']=Profiles[profileIndex]['offsetLeft'] || '0px';
+			Profiles[newIndex]['offsetTop']=Profiles[profileIndex]['offsetTop'] || '0px';
+			Profiles[newIndex]['GpoupList']=Profiles[profileIndex]['GpoupList'] || defGroup;
 			//set new point left top
 			var OneBtn='';
 			OneBtn+="\t"+'{'+"\n";
@@ -846,12 +904,12 @@ $(document).ready(function() {
 		var newGropuString='';
 		var pName = prompt("Название:", event.target.title);
 		var newIndex=profileIndex;
-		if (pName!==false && !pName.match(/^[^A-zА-я\w\d\s_-]*$/)
+		if (pName && pName!==false && !pName.match(/^[^A-zА-я\w\d\s_-]*$/)
 			){
 			newGropuString="<div href=\"#\" class=\"list-group-item\"> \t\t<h4 class=\"list-group-item-heading\"><span class=\"icon\"></span><span class=\"text\">&nbsp;"+pName+"</span></h4> \t\t</div> \t\t";
 			//no data
-			if (Profiles[profileIndex]!=undefined){
-				Profiles[profileIndex]['GpoupList']=Profiles[profileIndex]['GpoupList'].replace(/(.*)(\<div.*?autohist)(.*)/,'$1'+newGropuString+'$2$3')
+			if (typeof(Profiles[profileIndex])!='undefined' && Array.isArray(Profiles[profileIndex]['GpoupList']) ){
+				Profiles[profileIndex]['GpoupList'].push(pName);
 				//Отобразим группу
 				profileSelect(profileIndex);
 			}
@@ -1064,6 +1122,45 @@ $(document).ready(function() {
 				}
 			});
 		}
+	});
+	$('#tmpContGroupMenu .list-group-item .groupmove').on('click',function(e){
+		//перемещаем группу
+		//само меню
+		var tmpCont=$(this).closest('#tmpContGroupMenu');
+		//Найдем группу, индекс
+		var groupIndex=tmpCont.data('itemIndex');
+		//Где расположена сама группа
+		var par=$('.maingroups .list-group-item').not('.autohist').eq(groupIndex);
+		//Включаем особый режим чтобы при наведении выделялось
+		moveGroup=1;
+		tmpCont.addClass('hide');
+	})
+	$('#tmpContGroupMenu .list-group-item .groupremove').on('click',function(e){
+		//Удалим группу
+		var tmpCont=$(this).closest('#tmpContGroupMenu');
+		//Найдем группу
+		var groupIndex=tmpCont.data('itemIndex');
+		var par=$('.maingroups .list-group-item').not('.autohist').eq(groupIndex);
+		if (groupIndex>=0){
+			if (confirm('Удалить / delete ?')) {
+				//удаляем в памяти
+				if (Array.isArray(Profiles[profileIndex].GpoupList)){
+					Profiles[profileIndex].GpoupList.splice(groupIndex, 1);
+				}
+				else{
+					console.log('error delete');
+				}
+				
+				//удаляем в списке
+				if (par.length){
+					par.remove();
+				}
+			}
+		}
+		event.preventDefault();
+		//close menu
+		tmpCont.addClass('hide');
+		//return;
 	});
 	$('#tmpContMenu .list-group-item .delpoint').on('click',function(e){
 		//удаляем точку на карте
@@ -1481,10 +1578,11 @@ $(document).ready(function() {
 		}
 		return false;
 	});
-	$('.maingroups').on('click','.list-group-item-heading .text',function(){
+	$('.maingroups').on('click','.list-group-item .list-group-item-heading .text',function(){
 		var el=$(this);
 		var newselarr=[];
-		var par=el.parent().parent(); //.list-group-item
+		//var par=el.parent().parent(); //.list-group-item
+		var par=el.closest('.list-group-item');
 		if (event.shiftKey){
 			//Выделяем точки группы
 			par.find('.list-group-item-text').each(function(){
@@ -1496,18 +1594,49 @@ $(document).ready(function() {
 			return;
 		}
 		if (event.ctrlKey){
+			//будем выводить меню с выбором
+			if (moveGroup){
+				//отмена перемещения
+				moveGroup=0;
+				return;
+			}
+			else if (!par.hasClass('autohist')){
+				let el=$('#tmpContGroupMenu');
+				let elh=el.outerHeight();
+				let menuheight=0;
+				el.toggleClass('hide');
+				el.css('left',event.pageX+'px');
+				menuheight=event.pageY;
+				//далее передвигаем с учетом экрана, если позволяет - справа от курсора, если нет - справа будет низ меню
+				if (event.pageY+elh>$('body').height()){
+					menuheight-=elh;
+				}
+				el.css('top',menuheight+'px');			
+				//Найдем группу
+				let sibs=par.parent().find('.list-group-item').not('.autohist');
+				let groupIndex=sibs.index(par);
+				el.data('itemIndex',groupIndex);
+				return;
+			}
+		}else if (event.altKey){
 			//Переименовываем группу
 			//Найдем группу
 			var sibs=par.parent().find('.list-group-item').not('.autohist');
 			var groupIndex=sibs.index(par);
 			if (groupIndex>=0){
-				var gOldText=$(Profiles[profileIndex].GpoupList).find('.text').eq(groupIndex).text().trim();
-				var gOldHtml=$(Profiles[profileIndex].GpoupList).find('.text').get(groupIndex).outerHTML;
+				var gOldText=Profiles[profileIndex].GpoupList[groupIndex].trim();
+				//var gOldHtml=$(Profiles[profileIndex].GpoupList).find('.text').get(groupIndex).outerHTML;
 				var gName = prompt("Название:", gOldText);
 				if (gOldText!=gName && gName != null){
-					var gNewHtml=gOldHtml.replace(gOldText,gName);
+					//var gNewHtml=gOldHtml.replace(gOldText,gName);
 					//заготовка готова, меняем в профиле, в памяти
-					Profiles[profileIndex].GpoupList=Profiles[profileIndex].GpoupList.replace(gOldHtml,gNewHtml);
+					//Profiles[profileIndex].GpoupList=Profiles[profileIndex].GpoupList.replace(gOldHtml,gNewHtml);
+					if (Array.isArray(Profiles[profileIndex].GpoupList)){
+						Profiles[profileIndex].GpoupList[groupIndex]=gName;
+					}
+					else{
+						console.log('error rename');
+					}
 					//меняем в списке
 					el.html(el.html().replace(gOldText,gName));
 				}
@@ -1515,54 +1644,85 @@ $(document).ready(function() {
 			event.preventDefault();
 			return;
 		}
-		if (event.altKey){
-			//Удалим группу
-			//Найдем группу
-			var sibs=par.parent().find('.list-group-item').not('.autohist');
-			var groupIndex=sibs.index(par);
-			if (groupIndex>=0){
-				//var gOldText=$(Profiles[profileIndex].GpoupList).find('.text').eq(groupIndex).text().trim();
-				if (confirm('Удалить / delete ?')) {
-					var tmpgroup=Profiles[profileIndex].GpoupList;
-					var pos1=tmpgroup.indexOf($(tmpgroup).filter('.list-group-item').get(groupIndex).outerHTML);
-					var pos2=tmpgroup.indexOf($(tmpgroup).filter('.list-group-item').get(groupIndex+1).outerHTML);
-					if (pos1 && pos2){
-						//удаляем в памяти
-						Profiles[profileIndex].GpoupList=tmpgroup.replace(tmpgroup.slice(pos1, pos2),'');
-					}
-					else
-					{
-						console.log('pos not correct');
-					}
-					//Profiles[profileIndex].GpoupList=Profiles[profileIndex].GpoupList.replace(gOldHtml,gNewHtml);
-					console.log();
-					/*
-						selectedElement = $(".example").contents(); 
-						textNodes = selectedElement.filter(function () 
-						{ 
-						return this.nodeType === Node.TEXT_NODE; 
-						}); 
-						как будем действовать:
-						нужно убрать всё в определенном промежутке replace
-						т.е. от 1 до 2 если выбрана 1 и если последняя то от последней до конца
-						ищем текущий html и +1, находим позиции в начальном массиве групп, вырезаем отрезок
-					*/
-					//удаляем в списке
-					par.remove();
+		if (moveGroup){
+			par.removeClass('moveGroup');
+			moveGroup=0;
+			//Само перемещение
+			//определить откуда
+			let sibs=par.parent().find('.list-group-item').not('.autohist');
+			let groupIndex=sibs.index(par);
+			//определяем куда
+			let GrFrom=$('#tmpContGroupMenu').data('itemIndex');
+			let GrVal=Profiles[profileIndex].GpoupList[GrFrom];
+			//лучше сначала вставлять, потом после вставленного дописать к следующим индексам 1, затем удалить
+			//в памяти
+			if (groupIndex<GrFrom){
+				//уменьшение индекса - перемещаюсь выше
+				Profiles[profileIndex].GpoupList.splice(groupIndex+1,0,GrVal);
+				Profiles[profileIndex].GpoupList.splice(GrFrom+1,1);
+			}else if (groupIndex>GrFrom){
+				//новый индекс больше старого - перемещаюсь ниже
+				Profiles[profileIndex].GpoupList.splice(groupIndex+1,0,GrVal);
+				Profiles[profileIndex].GpoupList.splice(GrFrom,1);
+			}else{
+				//равно - вообще не перемещаюсь
+			}
+			//визуально
+			//add
+			/*let GrFromVis=GrFrom;
+			if (groupIndex<GrFrom){
+				GrFromVis+=1;
+			}*/
+			//лучше так не делать и копировать полностью
+			//par.after(wrapMainGroups(GrVal));
+			par.after(sibs.eq(GrFrom));
+			//remove уже не нужно
+			//sibs.eq(GrFromVis).remove();
+			
+			//перемещение групп точек в памяти
+			
+			//составим хеш массивы
+			let startI=groupIndex;
+			let endI=GrFrom;
+			let myinc=1;
+			//сначала середина
+			if (groupIndex>GrFrom){
+				//вниз
+				startI=GrFrom;
+				endI=groupIndex;
+				myinc=-1;
+			}
+			let arrRename={};
+			for (let z=startI+1;z<=endI;z++){
+				arrRename[z]=z+myinc;
+			}
+			//конечные
+			arrRename[GrFrom]=groupIndex;
+			
+			//цикл перемещения, в памяти менять бессмысленно, т.к. вся инфа собирает по точкам карты,
+			//но суть в том что инфа по точкам и их группам собирается из групп слева, хотя и стоит того если мы захотим скакать с карты на карту
+			for (tmppoint in self[Profiles[profileIndex].pointarr]) {
+				//обычно одна группа
+				let curG=JSON.parse(self[Profiles[profileIndex].pointarr][tmppoint].Groups)[0];
+				if (arrRename.hasOwnProperty(curG)){
+					//нашли совпадение по группе
+					//self[Profiles[profileIndex].pointarr
+					self[Profiles[profileIndex].pointarr][tmppoint].Groups=JSON.stringify([arrRename[curG]]);
 				}
 			}
-			event.preventDefault();
-			return;
-		}
-		if (el.hasClass('closed')){
-			el.removeClass('closed');
-			//open
-			par.find('.list-group-item-text').removeClass('hide');
+
 		}
 		else{
-			el.addClass('closed');
-			//close
-			par.find('.list-group-item-text').addClass('hide');
+			if (el.hasClass('closed')){
+				el.removeClass('closed');
+				//open
+				par.find('.list-group-item-text').removeClass('hide');
+			}
+			else{
+				el.addClass('closed');
+				//close
+				par.find('.list-group-item-text').addClass('hide');
+			}
 		}
 	});
 	$('#flylist').on('click','.list-group-item-text .icon',function(){
@@ -1688,22 +1848,36 @@ $(document).ready(function() {
 	});
 	$('#flylist').on({
 		mouseenter: function () {
+			if (moveGroup){
+				var el=$(this);
+				el.addClass('moveGroup')
+			}
+		},
+		mouseleave: function () {
+			if (moveGroup){
+				var el=$(this);
+				el.removeClass('moveGroup')
+			}
+		}
+	}, ".list-group-item:not(autohist)");
+	
+	$('#flylist').on({
+		mouseenter: function () {
 			var el=$(this);
-			var ishist=el.parent().hasClass('autohist');
 			$('#'+el.data('id')).addClass('highlight');
-			if (ishist && movehist){
+			if (movehist){
 				el.addClass('hMove')
 			}
 		},
 		mouseleave: function () {
 			var el=$(this);
-			var ishist=el.parent().hasClass('autohist');
 			$('#'+el.data('id')).removeClass('highlight');
-			if (ishist && movehist){
+			if (movehist){
 				el.removeClass('hMove')
 			}
 		}
-	}, ".list-group-item-text"); 
+	}, ".list-group-item.autohist .list-group-item-text"); 
+	//list-group-item
 	$('#mainpic').on('mouseenter','.mycircle',function(){
 		lastId=this.id;
 	});

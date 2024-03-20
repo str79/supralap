@@ -13,12 +13,15 @@ var langStr={
 	FASTACT_NEWPOINT:'New point.',
 	FASTACT_COMPRESS:'Compress.',
 	MAPS:'Maps',
+	HISTNAME:'History',
 	GROUPS:'Groups',
 	GROUPS_ALLON:'Enable all',
 	GROUPS_ALLOFF:'Disable all',
 	GROUPS_COMMON:'Common group',
 	GROUPS_HISTORY:'History',
-	CONTMENU:'Item menu',
+	GROUPCMENU:'Group menu',
+	GROUPCMENU_MOVE:'Move',
+	GROUPCMENU_REMOVE:'Remove',
 	CONTMENU_CHGROUP:'Change group',
 	CONTMENU_DELPOINT:'Remove Item',	
 	LANG:'<img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Flag_of_the_United_Kingdom_%281-2%29.svg" style="display: inline;height: 1em;">Lang',
@@ -41,7 +44,7 @@ var langStr={
 	<br>\
 	In the profiles menu (on the right), when clicked on any map (profile), activates the profile and changes the card corresponding to the profile, also loads history and loads new groups (menu on the left),<br> \
 	when you click on the label \"cards\" the profile menu opens/closes,<br>\
-	when you click with alt pressed on the “groups” label, the group menu opens/closes.<br> \
+	when you click with Ctrl pressed on the “groups” label, the group menu opens/closes.<br> \
 	<br>-----------Details--------<br> \
 	<br>---Group \"History\"\:<br> \
 	History is saved in localStorage<br>\
@@ -66,9 +69,17 @@ var langStr={
 	the latest changes will be saved. 2. After the operation, copy and save the result in settings.js).<br> \
 	<br>\
 	Shift + click on the group - selects the points of the group<br> \
-	Сtrl + click on the group - allows you to rename the group<br> \
-	Alt + click on the group - allows you to remove the group<br> \
+	alt + click on the group - allows you to rename the group<br> \
+	ctrl + click on the group - menu appears<br> \
+	where you can:<br> \
+	move group (also affects groups when collecting markers of the current map)<br> \
+	delete group<br> \
+	when moving, destination group selection is activated<br> \
+	click - confirm and move<br> \
+	ctrl + click - cancel<br> \
 	just click on the group - opens/closes it<br> \
+	<br>---Maps/profiles\:<br> \
+	Shift + click on the map - allows you to rename it.<br> \
 	<br>---Map\:<br> \
 	Click on an element on the map while holding down the shift key - you can edit the text description. \
 	<br>\
