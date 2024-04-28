@@ -11,7 +11,8 @@ var langStr={
 	FASTACT_NEWEMAP:'Create a new map (based on the current one).',
 	FASTACT_NEWGROUP:'New group.',
 	FASTACT_NEWPOINT:'New point.',
-	FASTACT_COMPRESS:'Compress.',
+	FASTACT_COMPRESS:'Compress points.',
+	FASTACT_IGNORDEL:'Delete ignore list.',
 	MAPS:'Maps',
 	HISTNAME:'History',
 	GROUPS:'Groups',
@@ -23,7 +24,8 @@ var langStr={
 	GROUPCMENU_MOVE:'Move',
 	GROUPCMENU_REMOVE:'Remove',
 	CONTMENU_CHGROUP:'Change group',
-	CONTMENU_DELPOINT:'Remove Item',	
+	CONTMENU_DELPOINT:'Remove Item',
+	CONTMENU_ADDIGNORE:'Ignore for routes',
 	LANG:'<img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Flag_of_the_United_Kingdom_%281-2%29.svg" style="display: inline;height: 1em;">Lang',
 	HELP_TEXT:'<br>-----The operating procedure is approximately as follows (quick start)----------\:<br> \
 	we select the desired map on the right menu, as we progress through the game, we turn off the collected points individually by clicking on it in the map, and our path is remembered in history.<br> \
@@ -83,8 +85,8 @@ var langStr={
 	<br>---Map\:<br> \
 	Click on an element on the map while holding down the shift key - you can edit the text description. \
 	<br>\
-	If you hold down ctrl and click on map element, item menu appears, you can change his group number,<br> \
-	remove the item itself<br> \
+	If you hold down ctrl and click on map element, item menu appears, you can change his group number<br> \
+	or remove the item itself or add the point to the ignore list<br> \
 	Markers (elements) on the map can be moved while holding alt - then a copy of the mark is created<br> \
 	Also added a method to cancel dragging if ctrl and shift are pressed.<br> \
 	<br> \
@@ -120,9 +122,11 @@ var langStr={
 	after all the manipulations, we need to copy all profiles - double click on the \"Groups\" inscription and put it in settings.js with overwriting<br> \
 	<br>\
 	The new action compress - compresses the selected points; if there are none, compresses all points. \
+	<br> \
+	Delete ignore list - deletes the ignore list from storage and memory \
 	<br>---Settings settings.js<br> \
 	You can determine the index from which the counting of numbers begins. This is the StartIndex field, it is outdated, but it works, it was needed when history only remembered numbers, regardless of the map.<br>\
 	pointarr - link to an array of elements (points, circles) for a given map (profile)<br> \
-	GpoupList - a list of groups - groups with a fairly standard and defined format, almost naked html<br> \
+	GpoupList - a list of groups <br> \
 	',
 };

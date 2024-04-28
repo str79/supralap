@@ -41,10 +41,13 @@ $(document).ready(function() {
 	var mapSettings; //скрипт настроек
 	var RouteLines=[]; //стрелки маршрутов, объекты
 	var defRouteCount=3; //Стандартная длина маршрута
+	var IgnoreName; //Имя игнор листа для маршрутов
+	var globIgnore=[]; //Список точек для игнора при перерисовке маршрута
 	//загрузка истории
 	//historyName=$('.historyName').text();
 	historyName=$('.gameName').text()+'hist';
 	settingsName=$('.gameName').text()+'settings';
+	IgnoreName=$('.gameName').text()+'ignore';
 	//Загрузка настроек
 	loadSettings();
 	//Установка настроек
@@ -57,6 +60,8 @@ $(document).ready(function() {
 	function init(){
 		//Загрузка истории
 		loadHistory();
+		//загрузка игнор листа
+		loadGlobIgnore();
 		//Выводим группы
 		$('#flyProf .list-group-item').not('.custom').remove();
 		$('#flyProf .mainfly').append(wrapGroups());
@@ -109,6 +114,20 @@ $(document).ready(function() {
 		if (globhist===null){
 			console.log('История не существует / history not found');
 			globhist=[];
+		}
+	}
+	function loadGlobIgnore(){
+		globIgnore=getCookie(IgnoreName);
+		if (globIgnore===null){
+			//console.log('Игнор листа нет / ignore list not found');
+			globIgnore=[];
+		}
+		try {
+			globIgnore = JSON.parse(globIgnore);
+		}
+		catch(e) {
+			//console.log('данных по игнор листу нет / ignore list corrupted');
+			globIgnore=[];
 		}
 	}
 	async function loadMAPSettings(langdir){
@@ -915,6 +934,19 @@ $(document).ready(function() {
 			}
 		}
 	});	
+	$('#flyaoMenu .list-group-item .ignordel').on('click',(event)=>{
+		//Удаляем игнор лист
+		globIgnore=[];
+		//update ignore
+		setCookie(IgnoreName,JSON.stringify(globIgnore),{expires:60*60*24*30,path:'/'})
+		if (typeof(routeShow)!='undefined' && routeShow){
+			//маршрут включен и это двигается центральная картинка или точка маршрута, обновляем позиции
+			//refreshRoute();
+			DeleteRoute();
+			CreateRoute();
+		}
+		event.preventDefault();
+	});	
 	$('#flyaoMenu .list-group-item .compress').on('click',(event)=>{
 		//Сжать
 		//var el=$(event.target);
@@ -1064,17 +1096,32 @@ $(document).ready(function() {
 		});
 	}
 	function GetCurRoute(){
+		//вычитаем игнор лист
+		var ignoreList=[];
+		//.not('#mapoint2,#mapoint3')
+		globIgnore.forEach(function(element){  let arrelem=element.split(profSym);if (arrelem[1]==self['Profiles'][profileIndex].pointarr){ ignoreList.push('#'+preId+arrelem[0]);} });
 		//вычисляем маршрут
-		var curRoute=$('#mainpic .mycircle').not('.hide').slice(0,defRouteCount);
+		var curRoute=$('#mainpic .mycircle').not('.hide').not(ignoreList.join(',')).slice(0,defRouteCount);
+		//var curRoute={};
+		/*curRouteOld.each(function(){
+			var dataIdFull=this.id+profSym+self['Profiles'][profileIndex].pointarr;
+			//Проверка если в игнор листе
+			if (!globIgnore.includes(dataIdFull)){
+				curRoute=jQuery.merge($(this),curRoute);
+			}
+		});*/
 		var options={};
 		//добавляем историю
 		if (globhist!==null && globhist.length){
 			var lastHist=globhist[globhist.length-1].split(profSym);
+			//и если это текущий профиль то добавляем элемент в список
 			if (lastHist[1]==self['Profiles'][profileIndex].pointarr){
-				//и если это текущий профиль то добавляем элемент в список
-				//curRoute=$('#'+lastHist[0]).add(curRoute);
-				curRoute=jQuery.merge($('#'+lastHist[0]),curRoute)
-				options.firstHist=1;
+				var dataIdFull=lastHist[0]+profSym+self['Profiles'][profileIndex].pointarr;
+				//Проверка если в игнор листе
+				if (!globIgnore.includes(dataIdFull)){
+					curRoute=jQuery.merge($('#'+lastHist[0]),curRoute)
+					options.firstHist=1;
+				}
 			}
 		}
 		return {curRoute:curRoute,options:options};
@@ -1161,6 +1208,26 @@ $(document).ready(function() {
 		//close menu
 		tmpCont.addClass('hide');
 		//return;
+	});
+	$('#tmpContMenu .list-group-item .toIgnore').on('click',function(e){
+		var parentel=$(this).closest('#tmpContMenu');
+		var dataid=parentel.data('itemId');
+		var dataIdFull=dataid+profSym+self['Profiles'][profileIndex].pointarr;
+		//Проверка
+		if (!globIgnore.includes(dataIdFull)){
+			//добавление в игнор лист
+			globIgnore.push(dataIdFull);
+			//update ignore
+			setCookie(IgnoreName,JSON.stringify(globIgnore),{expires:60*60*24*30,path:'/'})
+			if (typeof(routeShow)!='undefined' && routeShow){
+				//маршрут включен и это двигается центральная картинка или точка маршрута, обновляем позиции
+				//refreshRoute();
+				DeleteRoute();
+				CreateRoute();
+			}					
+		}
+		event.preventDefault();
+		parentel.addClass('hide');
 	});
 	$('#tmpContMenu .list-group-item .delpoint').on('click',function(e){
 		//удаляем точку на карте
@@ -1993,10 +2060,9 @@ $(document).ready(function() {
 		//delete from history
 		var par=$(this).parent();
 		var dataid=par.data('id')+profSym+self['Profiles'][profileIndex].pointarr;
-		var dataid2=dataid;
 		par.remove();
 		//Проверка
-		if (globhist.includes(dataid) || globhist.includes(dataid2)){
+		if (globhist.includes(dataid)){
 			//удаление из истории
 			var tmpindex = globhist.indexOf(dataid);
 			if (tmpindex > -1) {
