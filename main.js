@@ -1030,8 +1030,7 @@ $(document).ready(function() {
 			}
 			if (zobj=='drawLines'){
 				//уже не рисуем направляющие линии
-				console.log('drawlines');
-				console.log('drawlines');
+				//console.log('drawlines');
 				tmpPointsDx={};
 				tmpDirectrix=null;
 				maptarget=null;
@@ -1095,6 +1094,8 @@ $(document).ready(function() {
 				end:elend,
 				path:'straight',
 				color:lineColor,
+				dash: true,
+				endPlug:'behind',
 			}
 		)
 	}
@@ -1140,11 +1141,12 @@ $(document).ready(function() {
 					prevElem.classList.remove('hide');
 				}
 				RouteLines.push(new LeaderLine(
-					{start:prevElem,end:this,dropShadow: true,path:'straight',startPlugColor: '#79F761',endPlugColor:'#E67146',color:'#FF7F4F'}
+					{start:prevElem,end:this,dropShadow: true,path:'straight',gradient: true,startPlugColor: '#ded35d',endPlugColor:'#E67146',color:'#FF7F4F'}
 				));
 			}
 			prevElem=this;
 		});
+
 		//скрываем
 		tmphide.forEach(function(element){
 			element.classList.add('hide');
@@ -1366,7 +1368,7 @@ $(document).ready(function() {
 				}
 			}
 		}
-		if (event.shiftKey && !mapcircle){
+		if (event.shiftKey && !mapcircle && !drawLines){
 			//Режим выделения
 			if (Selectpt){
 				if (selectedArr.length){
@@ -1492,10 +1494,7 @@ $(document).ready(function() {
 			//запоминаем точку
 			if (tmpPointsDx.x1!=undefined && tmpDirectrix!=null){
 				//не первая - ставим окончательно и рисуем
-				//перерисовываем
-				if (tmpDirectrix!=null && tmpDirectrix){
-					tmpDirectrix=correctLineStraight(tmpDirectrix,event.offsetX,event.offsetY);
-				}
+				//не перерисовываем - не будет выравнивания
 				//и ставим
 				directrix.push(tmpDirectrix);
 				tmpDirectrix=null;
