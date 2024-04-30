@@ -4,6 +4,8 @@ var keymove=0;
 var gmove=0; //global move - перемещение
 var gsize=0; //gloval size - изменения расстояния всех значков
 var invIndex=0;
+var drawLines=0; //режим рисования линий
+//var drawLines=0;  //признак что включен режим рисования линий
 /*
 	на будущее
 	&#9203;
@@ -19,8 +21,8 @@ $(document).ready(function() {
 	var maptarget=null;
 	var movehist=0; //режим перемещения элементов истории
 	var moveGroup=0; //режим перемещения групп
-	var mapposx=null,mapposy=null; //старые координаты точки mouse event
-	var mapposcx=null,mapposcy=null; //старые координаты точки
+	var mapposx=null,mapposy=null; //старые координаты точки mouse event как на экране
+	var mapposcx=null,mapposcy=null; //старые координаты точки относительно в элементе
 	var circlept=0;  //признак что включен информационный прямоугольник
 	var Selectpt=0;  //признак что включен прямоугольник выделения
 	var defaultProfile=0; //профиль по дефолту.
@@ -43,6 +45,9 @@ $(document).ready(function() {
 	var defRouteCount=3; //Стандартная длина маршрута
 	var IgnoreName; //Имя игнор листа для маршрутов
 	var globIgnore=[]; //Список точек для игнора при перерисовке маршрута
+	var directrix=[]; //направляющие линии
+	var tmpDirectrix=null; //направляющая линия временная (для показа во время рисования)
+	var tmpPointsDx={}; //точки для направляющей
 	//загрузка истории
 	//historyName=$('.historyName').text();
 	historyName=$('.gameName').text()+'hist';
@@ -54,7 +59,7 @@ $(document).ready(function() {
 	setupSettings();
 	//загрузка карт
 	loadMAPSettings(defaultLang).then((result1) => {
-		console.log(result1);
+		//console.log(result1);
 		init();
 	})
 	function init(){
@@ -73,7 +78,7 @@ $(document).ready(function() {
 		})
 		//меняем язык
 		langSelect(defaultLang).then((data)=>{
-			console.log(data);
+			//console.log(data);
 			//подгружаем профиль
 			profileSelect(defaultProfile);
 		});
@@ -1023,6 +1028,15 @@ $(document).ready(function() {
 				//удаляем маршрут
 				DeleteRoute();
 			}
+			if (zobj=='drawLines'){
+				//уже не рисуем направляющие линии
+				console.log('drawlines');
+				console.log('drawlines');
+				tmpPointsDx={};
+				tmpDirectrix=null;
+				maptarget=null;
+				self[zobj]=0;
+			}			
 		}
 		else
 		{
@@ -1043,8 +1057,48 @@ $(document).ready(function() {
 				//строим маршрут
 				CreateRoute();
 			}
+			if (zobj=='drawLines'){
+				//рисуем направляющие линии
+				//обнуляем чтобы они были первыми
+				tmpPointsDx={};
+				tmpDirectrix=null;
+				maptarget=$('#mainpic');
+				self[zobj]=1;
+				//console.log('draw lines on');
+			}
 		}
 	})
+	function drawLineTmp(x1,y1,x2,y2){
+		if (tmpDirectrix!=null && tmpDirectrix){
+			//перерисовываем
+			tmpDirectrix=correctLineStraight(tmpDirectrix,x2,y2);
+		}
+		else
+		{
+			//первый раз рисуем
+			tmpDirectrix=drawLineStraight(x1,y1,x2,y2);
+		}
+	}
+	function correctLineStraight(obj,x2,y2){
+		var mapPic=document.getElementById('mainpic');
+		var elend=LeaderLine.pointAnchor(mapPic, {x: x2, y: y2});
+		return obj.setOptions({end:elend});
+	}
+	function drawLineStraight(x1,y1,x2,y2,lineColor='#FFF'){
+		//new LeaderLine(, LeaderLine.pointAnchor(temp0, {x: '100%', y: 360}))
+		var mapPic=document.getElementById('mainpic');
+		var elStart=LeaderLine.pointAnchor(mapPic, {x: x1, y: y1});
+		var elend=LeaderLine.pointAnchor(mapPic, {x: x2, y: y2});
+		return new LeaderLine(
+			{
+				start:elStart,
+				end:elend,
+				path:'straight',
+				color:lineColor,
+			}
+		)
+	}
+	
 	function DeleteRoute(){
 		RouteLines.forEach(function(element){
 			element.remove();
@@ -1058,6 +1112,7 @@ $(document).ready(function() {
 				tmphide.push(element.start);
 				element.start.classList.remove('hide');
 			}
+			//Re-position the leader line with current position and size of the elements as start or end option.
 			element.position();
 		});
 		tmphide.forEach(function(element){
@@ -1085,7 +1140,7 @@ $(document).ready(function() {
 					prevElem.classList.remove('hide');
 				}
 				RouteLines.push(new LeaderLine(
-					{start:prevElem,end:this,dropShadow: true,path:'straight'}
+					{start:prevElem,end:this,dropShadow: true,path:'straight',startPlugColor: '#79F761',endPlugColor:'#E67146',color:'#FF7F4F'}
 				));
 			}
 			prevElem=this;
@@ -1107,7 +1162,7 @@ $(document).ready(function() {
 			var dataIdFull=this.id+profSym+self['Profiles'][profileIndex].pointarr;
 			//Проверка если в игнор листе
 			if (!globIgnore.includes(dataIdFull)){
-				curRoute=jQuery.merge($(this),curRoute);
+			curRoute=jQuery.merge($(this),curRoute);
 			}
 		});*/
 		var options={};
@@ -1433,6 +1488,30 @@ $(document).ready(function() {
 				placebtn(oldx,oldy,numi,desc,0,group,bonusClass);
 			}
 		}
+		if (drawLines && mapcircle==0){
+			//запоминаем точку
+			if (tmpPointsDx.x1!=undefined && tmpDirectrix!=null){
+				//не первая - ставим окончательно и рисуем
+				//перерисовываем
+				if (tmpDirectrix!=null && tmpDirectrix){
+					tmpDirectrix=correctLineStraight(tmpDirectrix,event.offsetX,event.offsetY);
+				}
+				//и ставим
+				directrix.push(tmpDirectrix);
+				tmpDirectrix=null;
+				//console.log('set end point');
+				tmpPointsDx.x1=undefined;
+			}
+			else{
+				//console.log('set first point');
+				//если только кликаем по изображению а не по меню.
+				if (event.target.tagName=="IMG"){
+					//нужны координаты относительно картинки
+					tmpPointsDx.x1=event.offsetX;
+					tmpPointsDx.y1=event.offsetY;
+				}
+			}
+		}
 		if ((event.ctrlKey && event.shiftKey) && mapposcx && mapposx && !circlept){
 			//Отмена, возвращаем старые координаты
 			maptarget.css('left',mapposcx+'px');
@@ -1465,7 +1544,7 @@ $(document).ready(function() {
 		var curscale=1;
 		var element = document.querySelector('#mainpic');
 		var scaleX = element.getBoundingClientRect().width / element.offsetWidth;
-		if ($(this).hasClass('active') || circlept || Selectpt){
+		if ($(this).hasClass('active') || circlept || Selectpt || drawLines){
 			var mainpic;
 			//если это круг
 			if (mapcircle==1 ){
@@ -1503,6 +1582,30 @@ $(document).ready(function() {
 					cy=(event.pageY-mapposy);
 					maptarget.css('width',cx+'px');
 					maptarget.css('height',cy+'px');
+				}
+			}
+			else if (drawLines){
+				//это мы в процессе рисования временной линии
+				mainpic=null;
+				//перемещаем точку 2
+				if (tmpPointsDx.x1!=undefined && maptarget && mapposx!=0){
+					//мы должны прорисовать линию от старых координат до новых, но возможно стоит только точки обновить.
+					var xEnd=event.offsetX;
+					var yEnd=event.offsetY;
+					if (event.shiftKey){
+						var cx=Math.abs(event.offsetX-tmpPointsDx.x1);
+						var cy=Math.abs(event.offsetY-tmpPointsDx.y1);
+						//распрямляем
+						//по идее нам надо вычислить расстояния x2-x1 y2-y1
+						if (cx<=cy){
+							//и какое меньше, допустим x - выравниваем по горизонтали, усредняем x
+							xEnd=tmpPointsDx.x1;
+						}else{
+							yEnd=tmpPointsDx.y1;
+						}
+					}
+					
+					drawLineTmp(tmpPointsDx.x1,tmpPointsDx.y1,xEnd,yEnd);
 				}
 			}
 			else
@@ -1685,7 +1788,7 @@ $(document).ready(function() {
 				el.data('itemIndex',groupIndex);
 				return;
 			}
-		}else if (event.altKey){
+			}else if (event.altKey){
 			//Переименовываем группу
 			//Найдем группу
 			var sibs=par.parent().find('.list-group-item').not('.autohist');
@@ -1727,17 +1830,17 @@ $(document).ready(function() {
 				//уменьшение индекса - перемещаюсь выше
 				Profiles[profileIndex].GpoupList.splice(groupIndex+1,0,GrVal);
 				Profiles[profileIndex].GpoupList.splice(GrFrom+1,1);
-			}else if (groupIndex>GrFrom){
+				}else if (groupIndex>GrFrom){
 				//новый индекс больше старого - перемещаюсь ниже
 				Profiles[profileIndex].GpoupList.splice(groupIndex+1,0,GrVal);
 				Profiles[profileIndex].GpoupList.splice(GrFrom,1);
-			}else{
+				}else{
 				//равно - вообще не перемещаюсь
 			}
 			//визуально
 			//add
 			/*let GrFromVis=GrFrom;
-			if (groupIndex<GrFrom){
+				if (groupIndex<GrFrom){
 				GrFromVis+=1;
 			}*/
 			//лучше так не делать и копировать полностью
@@ -1777,7 +1880,7 @@ $(document).ready(function() {
 					self[Profiles[profileIndex].pointarr][tmppoint].Groups=JSON.stringify([arrRename[curG]]);
 				}
 			}
-
+			
 		}
 		else{
 			if (el.hasClass('closed')){
@@ -2204,4 +2307,4 @@ $(document).ready(function() {
 		localStorage.removeItem(name);
 	}	
 	//работа с куками
-});																									 																												
+});																									 																														33

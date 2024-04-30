@@ -6,6 +6,7 @@ var langStr={
 	ACT_GLOBALSIZE:'Global size',
 	ACT_YONGUP:'Young numbers are flowing up.',
 	ACT_BUILDROUTE:'Build a route',
+	ACT_TEMPGLINES:'Drawing Guide Lines',
 	FASTACT:'Fast actions:',
 	FASTACT_SAVEMAP:'Save map position and size in memory.',
 	FASTACT_NEWEMAP:'Create a new map (based on the current one).',
@@ -114,6 +115,10 @@ var langStr={
 	<br>\
 	option build a route - builds a route based on points on the map, also writes the last removed point to the beginning \
 	allows you to change the size using the [] keys \
+	<br> \
+	Drawing lines - turns on the line drawing mode, click on the map - first point, then interactively click on the desired location of second point, \
+	the line will fixed, then you can draw a new one or turn off this mode, also if you hold shift while selecting second point, \
+	then the line will become straight <br> \
 	<br>---Quick Actions<br> \
 	Saving the position of current map (and other maps) in memory - saves the position for profile settings, for convenience, also saves zoom,<br> \
 	new map (profile) - creates a new profile in memory with one new label, convenient if there are no cards at all or if you need to duplicate the current one<br> \

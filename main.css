@@ -285,9 +285,11 @@ body .hidden{
 	top: 0;
 	z-index: 1;
 }
+#flycMenu .list-group-item-text{
+	padding:0 10px;
+}
 #flycMenu .list-group-item-text:hover{
 	background: #c8c8c8;
-	padding:0 10px;
 }
 #flyaoMenu {
 	position: absolute;
