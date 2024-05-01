@@ -118,7 +118,7 @@ var langStr={
 	<br> \
 	Drawing lines - turns on the line drawing mode, click on the map - first point, then interactively click on the desired location of second point, \
 	the line will fixed, then you can draw a new one or turn off this mode, also if you hold shift while selecting second point, \
-	then the line will become straight <br> \
+	then the line will become straight. It is also possible to change the line color in the drawing toolbar; the default is the back color. <br> \
 	<br>---Quick Actions<br> \
 	Saving the position of current map (and other maps) in memory - saves the position for profile settings, for convenience, also saves zoom,<br> \
 	new map (profile) - creates a new profile in memory with one new label, convenient if there are no cards at all or if you need to duplicate the current one<br> \

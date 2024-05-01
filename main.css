@@ -371,3 +371,42 @@ body .hidden{
 	background: #e8e8e8;
 	padding:0;
 }
+/* image tools*/
+.drawingTools{
+	display: none;
+}
+.drawingTools .setColors {
+	display: inline-block;
+	width: 40px;
+	height: 40px;
+	border: 1px solid transparent;
+	position: relative;
+}
+.drawingTools .setColors .back,
+.drawingTools .setColors .first {
+	width: 26px;
+	height: 26px;
+	background: #fff;
+	border: 1px solid #000;
+	position: absolute;
+}
+.drawingTools .setColors .mark{
+	width: 22px;
+	height: 22px;
+	margin: 1px;
+}
+.drawingTools .setColors .first{
+	z-index: 1;
+}
+.drawingTools .setColors .back{
+	top: 12px;
+	left: 12px;
+	z-index: 0;
+}
+.drawingTools .setColors .first .mark{
+	background: #000;
+}
+.drawingTools .setColors .back .mark{
+	background: #fff;
+}
+/* image tools*/

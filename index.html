@@ -38,7 +38,7 @@
 				<div class="list-group hide">
 					<div href="#" class="list-group-item">
 						<p class="list-group-item-text">
-							v=2.010<br>
+							v=2.011<br>
 							<span class="langCh">
 								HELP_TEXT
 							</span>
@@ -120,9 +120,6 @@
 					<div href="#" class="list-group-item">
 						<h4 class="list-group-item-heading"><span class="icon"></span><span class="text">&nbsp;Общая группа</span></h4>
 					</div>
-					<div href="#" class="list-group-item autohist">
-						<h4 class="list-group-item-heading"><span class="icon"></span><span class="text">&nbsp;История</span></h4>
-					</div>
 				</div>
 			</div>
 		</div>
@@ -131,6 +128,7 @@
 		</div>
 		<div id="flylist" class="unselectable">
 			<div class="container">
+				<!-- Группы, те что слева -->
 				<h2 class="langCh">GROUPS</h2>
 				<div class="list-group maingroups">
 					<div class="btall">
@@ -144,6 +142,21 @@
 						<h4 class="list-group-item-heading"><span class="icon"></span><span class="text langCh">&nbsp;GROUPS_HISTORY</span></h4>
 					</div>
 				</div>
+				<!-- Полотно для инструментов рисования -->
+				<div class="drawingTools">
+					<div href="#" class="list-group-item">
+						<div class="setColors">
+							<div class="first">
+								<div data-color="#000" class="mark"></div>
+							</div>
+							<div class="back">
+								<div data-color="#fff" class="mark"></div>	
+							</div>
+							<input class="hidden" type="color" name="setcolors">
+						</div>
+					</div>
+				</div>
+				
 			</div>
 		</div>
 		<!-- образец для элемента текста группы -->
@@ -202,4 +215,4 @@
 		<div class="selectpt">
 		</div>
 	</body>
-</html>	
+</html>

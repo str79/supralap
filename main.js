@@ -1035,6 +1035,8 @@ $(document).ready(function() {
 				tmpDirectrix=null;
 				maptarget=null;
 				self[zobj]=0;
+				$('.drawingTools').hide();
+				$('#flylist .maingroups').toggleClass('hide');
 			}			
 		}
 		else
@@ -1063,6 +1065,8 @@ $(document).ready(function() {
 				tmpDirectrix=null;
 				maptarget=$('#mainpic');
 				self[zobj]=1;
+				$('.drawingTools').show();
+				$('#flylist .maingroups').toggleClass('hide');
 				//console.log('draw lines on');
 			}
 		}
@@ -1083,9 +1087,15 @@ $(document).ready(function() {
 		var elend=LeaderLine.pointAnchor(mapPic, {x: x2, y: y2});
 		return obj.setOptions({end:elend});
 	}
-	function drawLineStraight(x1,y1,x2,y2,lineColor='#FFF'){
-		//new LeaderLine(, LeaderLine.pointAnchor(temp0, {x: '100%', y: 360}))
+	function drawLineStraight(x1,y1,x2,y2,lineColor='none'){
+		//временная прямая линия
+		
+		if (lineColor=='none'){
+			lineColor=$('.drawingTools .setColors .back .mark').data('color');
+		}
+		
 		var mapPic=document.getElementById('mainpic');
+		
 		var elStart=LeaderLine.pointAnchor(mapPic, {x: x1, y: y1});
 		var elend=LeaderLine.pointAnchor(mapPic, {x: x2, y: y2});
 		return new LeaderLine(
@@ -1105,6 +1115,11 @@ $(document).ready(function() {
 			element.remove();
 		});
 		RouteLines=[];
+	}
+	function refreshDirectrix(){
+		for (elLine in directrix){
+			directrix[elLine].position();
+		}
 	}
 	function refreshRoute(){
 		var tmphide=[];
@@ -1662,9 +1677,6 @@ $(document).ready(function() {
 					//тоже mapcircle, но не глобальное
 					//Корректировка на основе zoom
 					if (mapcircle){
-						//var scaleY = element.getBoundingClientRect().height / element.offsetHeight;
-						//if (Profiles[profileIndex]!=undefined && typeof(Profiles[profileIndex].zoom)!=undefined){
-						//curscale=Profiles[profileIndex].zoom;
 						curscale=scaleX;
 						cx=mapposcx+(event.pageX-mapposx)/curscale;
 						cy=mapposcy+(event.pageY-mapposy)/curscale;
@@ -1672,6 +1684,8 @@ $(document).ready(function() {
 					if (mainpic){
 						mainpic.css('left',cx+'px');
 						mainpic.css('top',cy+'px');
+						//Также обновляем временные линии (даже если не включены маршруты)
+						refreshDirectrix();
 					}
 					if (typeof(routeShow)!='undefined' && routeShow){
 						//маршрут включен и это двигается центральная картинка или точка маршрута, обновляем позиции
@@ -2174,6 +2188,19 @@ $(document).ready(function() {
 			setCookie(historyName,JSON.stringify(globhist),{expires:60*60*24*30,path:'/'})
 		}
 	});
+	
+	$('.drawingTools .setColors .mark').on('click',function(){
+		var elmark=$(this);
+		var inputel=elmark.parents('.setColors').find('input[name=setcolors]');
+		inputel.click();
+		inputel.one('change',function(){
+			var elinp=$(this);
+			var color=elinp.val();
+			elmark.data('color',color);
+			elmark.css('background',color);
+		});
+	});
+	
 	$('.helpp > div > h2').on('click',function(){
 		$(this).next().toggleClass('hide');
 	});
