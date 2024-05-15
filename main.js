@@ -548,6 +548,7 @@ $(document).ready(function() {
 		return (str + '').replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
 	}
 	function drawpoint(tmppoint,ptarr,nindex){
+		//для вывода в файл settings, формирует массив точек
 		ptprops='';
 		for (prop in self[Profiles[nindex].pointarr][tmppoint]) {
 			if (prop=='PointIndex'){continue;}
@@ -574,10 +575,10 @@ $(document).ready(function() {
 		//массив соответствий группы и ид
 		var arrgroup={};
 		var flylist;
-		var cntgroups=$('#flylist .list-group-item').not('.autohist').length;
+		var cntgroups=$('#flylist .maingroups .list-group-item').not('.autohist').length;
 		var groupi=0;
 		for (groupi=0;groupi<cntgroups;groupi++){
-			flylist=$('#flylist .list-group-item:eq('+groupi+') .list-group-item-text');
+			flylist=$('#flylist .maingroups .list-group-item:eq('+groupi+') .list-group-item-text');
 			flylist.each(function(){arrgroup[$(this).data('id')] = groupi;});
 		}
 		var tmpval='';
@@ -650,7 +651,7 @@ $(document).ready(function() {
 			{
 				profhead+="\n\t"+'{'+"\n"+tmpproftext+'\t},';
 			}
-			//getall old maps
+			//getall old points
 			ptarr='';
 			if (alton){
 				for (tmppoint in arrsort[nindex]) {
@@ -665,9 +666,8 @@ $(document).ready(function() {
 			tmpprof[nindex]='var '+Profiles[nindex].pointarr+'=['+"\n"+ptarr+'];'+"\n";
 		}
 		curtext+='var Profiles=['+profhead+"\n"+']'+"\n\n";
-		//старые профили
+		//Текущий профиль, точки
 		var curbtn='';
-		//flylist=$('#mainpic .mycircle:not(.hide)');
 		flylist=$('#mainpic .mycircle');
 		function drawpointCur(el,group){
 			var elemmap=$(el);
@@ -683,8 +683,8 @@ $(document).ready(function() {
 			curbtn+="\t"+'},'+"\n";
 			return curbtn;
 		}
+		//собираем точки
 		if (alton){
-			//собираем точки
 			for (tmppoint in arrsort[profileIndex]) {
 				el=flylist.filter('#'+preId+(Profiles[profileIndex].StartIndex+arrsort[profileIndex][tmppoint]));
 				curbtn+=drawpointCur(el,arrgroup[el.attr('id')]);
@@ -1716,6 +1716,7 @@ $(document).ready(function() {
 	// найдет соответствующие ему элементы, которые
 	// при этом попадают в видимую область окна
 	function inWindow(wnd,currentEls){
+		if (!wnd){console.log('warning, wnd is null');return [];}
 		var wndOffset = wnd.offset();
 		var wndHeight = wnd.height();
 		var wndWidth = wnd.width();
@@ -2222,7 +2223,10 @@ $(document).ready(function() {
 			if (q.length){
 				$('#mainpic .mycircle').each(function(){
 					if ($(this).attr('title').toLowerCase().indexOf(q)!==-1){
-						sresult.push($(this).attr('id'));
+						objsr={};
+						objsr.profile=profileIndex;
+						objsr.id=$(this).attr('id');
+						sresult.push(objsr);
 					}
 				});
 				//сделаем поиск по неактивным профилям
@@ -2251,13 +2255,21 @@ $(document).ready(function() {
 				var newid,cce,newel;
 				//sresult.concat(otresult);
 				for (var i=0;i<sresult.length;i++){
-					cce=$('#'+sresult[i]);
-					newid=cce.get(0).id;
+					//cce=$('#'+sresult[i]);
+					//newid=cce.get(0).id;
 					//у нас есть id - берем с маркеров на карте описания
-					newel = $($.parseHTML( jQuery.trim(tmplist.replace(/#text#/gi, $('#'+newid).attr('title')+" ("+newid+")"))));
+					newel = $($.parseHTML( jQuery.trim(tmplist.replace(/#text#/gi, $('#'+sresult[i].id).attr('title')+" ("+sresult[i].id+")"))));
 					newel.find('.icon').remove();
-					newel.data('id',newid);
+					newel.data('id',sresult[i].id);
+					newel.data('profile',sresult[i].profile);
 					newel.on('click',function(event){
+						var profileCur=$(this).data('profile');
+						var sibs=$('#flyProf .list-group-item');
+						if (profileCur!=profileIndex){
+							sibs.eq(profileCur+1).click();
+							//Выключение истории
+							$('#flylist .autohist .list-group-item-heading .icon').click();
+						}
 						centerOnMap($('#'+$(this).data('id')));
 					});
 					sdlgwnd.append(newel)
@@ -2268,14 +2280,14 @@ $(document).ready(function() {
 					newel.data('id',otresult[i].id);
 					newel.data('profile',otresult[i].profile);
 					newel.on('click',function(event){
-						var profileIndex=$(this).data('profile');
-						//profileSelect(profileIndex);
+						var profileCur=$(this).data('profile');
 						var sibs=$('#flyProf .list-group-item');
-						sibs.eq(profileIndex+1).click();
-						$('.btall .allon').click();
-						centerOnMap($('#'+$(this).data('id')));
-						//Выключение истории
-						$('#flylist .autohist .list-group-item-heading .icon').click();
+						if (profileCur!=profileIndex){
+							sibs.eq(profileCur+1).click();
+							//Выключение истории
+							$('#flylist .autohist .list-group-item-heading .icon').click();
+						}
+						centerOnMap($('#'+$(this).data('id')));						
 					});
 					sdlgwnd.append(newel)
 				}
