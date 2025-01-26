@@ -1,11 +1,9 @@
-//import { myValue } from "./lang/ru/index.js";
-//import { myValue } from "/modules/my-module.js";
-var keymove=0;
+var keymove=0; // перемещение клавишами
 var gmove=0; //global move - перемещение
 var gsize=0; //gloval size - изменения расстояния всех значков
-var invIndex=0;
+var invIndex=0; //более молодые номера сверху
 var drawLines=0; //режим рисования линий
-//var drawLines=0;  //признак что включен режим рисования линий
+var routeShow=0; //показать маршрут
 /*
 	на будущее
 	&#9203;
@@ -42,12 +40,18 @@ $(document).ready(function() {
 	var globSettings; //массив настроек
 	var mapSettings; //скрипт настроек
 	var RouteLines=[]; //стрелки маршрутов, объекты
-	var defRouteCount=3; //Стандартная длина маршрута
+	var defRouteCount=4; //Стандартная длина маршрута
 	var IgnoreName; //Имя игнор листа для маршрутов
 	var globIgnore=[]; //Список точек для игнора при перерисовке маршрута
 	var directrix=[]; //направляющие линии
 	var tmpDirectrix=null; //направляющая линия временная (для показа во время рисования)
 	var tmpPointsDx={}; //точки для направляющей
+	var dLSelectDefault=0;//какой инструмент выбирать по умолчанию (0 - tmpLine) в режиме рисования
+	var dLSelected=0;//какой инструмент выбирать по умолчанию (0 - tmpLine) в режиме рисования
+	var leaderLineOptions={};//опции для постоянной линии
+	var arrPLines=[];//Массив постоянных линий
+	
+	
 	//загрузка истории
 	//historyName=$('.historyName').text();
 	historyName=$('.gameName').text()+'hist';
@@ -123,7 +127,7 @@ $(document).ready(function() {
 	}
 	function loadGlobIgnore(){
 		globIgnore=getCookie(IgnoreName);
-		if (globIgnore===null){
+		if (globIgnore===null || globIgnore==undefined){
 			//console.log('Игнор листа нет / ignore list not found');
 			globIgnore=[];
 		}
@@ -132,6 +136,10 @@ $(document).ready(function() {
 		}
 		catch(e) {
 			//console.log('данных по игнор листу нет / ignore list corrupted');
+			globIgnore=[];
+		}
+		if (!globIgnore){
+			//console.log('Игнор листа нет или неверный формат/ ignore list not found');
 			globIgnore=[];
 		}
 	}
@@ -265,6 +273,17 @@ $(document).ready(function() {
 			el.addClass('active');
 			profileIndex=sibs.index(el);
 			profileSelect(profileIndex);
+			if (typeof(routeShow)!='undefined' && routeShow){
+				//маршрут включен, выключим
+				let zobj='routeShow';
+				let elRoute=$('[data-action*=routeShow]');
+				if (elRoute.hasClass('active')){
+					elRoute.removeClass('active');
+				}
+				self[zobj]=0
+				DeleteRoute();
+				//CreateRoute();
+			}			
 		}
 	})
 	function profileSelect(num){
@@ -275,6 +294,7 @@ $(document).ready(function() {
 			zoom=Profiles[num].zoom;
 		}
 		mainpic.find('img').attr('src',Profiles[num].File).end().css({'transform':'scale('+zoom+')'});
+		//загрузка массива точек
 		pointsarr=self[Profiles[num].pointarr];
 		//Смена индекса точек
 		if (Profiles[num].StartIndex>0){
@@ -283,15 +303,24 @@ $(document).ready(function() {
 		mainpic.css('left',Profiles[num].offsetLeft);
 		mainpic.css('top',Profiles[num].offsetTop);
 		$('.maingroups .list-group-item').remove();
+		
 		//Добавление групп, массив групп
 		var groupscnt=Profiles[num].GpoupList.length;
 		var groupsHtml=$('');
 		for (z=0;z<groupscnt;z++){
 			//сразу имя
-			groupsHtml=groupsHtml.add(wrapMainGroups(Profiles[num].GpoupList[z]));
+			//убираем метки вида {!style=0}
+			let tmpName=Profiles[num].GpoupList[z];
+			if (tmpName.indexOf('{!style=')>=0){
+				let regStyle=/{.*?}/g;
+				tmpName=Profiles[num].GpoupList[z].replaceAll(regStyle,'');
+			}
+			//wrapMainGroups(Profiles[num].GpoupList[z])
+			groupsHtml=groupsHtml.add(wrapMainGroups(tmpName));
 		}
 		//и история
 		groupsHtml=groupsHtml.add(wrapMainGroups($('#tmpHistname .langNow').html()).addClass('autohist'));
+		
 		$('.maingroups').append(groupsHtml);
 		//Добавим иконку удаления групп
 		//Активация всех групп, кроме истории
@@ -299,28 +328,36 @@ $(document).ready(function() {
 			//active all
 			$('.maingroups .list-group-item:not(.autohist) .list-group-item-heading').addClass('active');
 		}
-		//замена точек 
+		
+		//замена старых точек на новые
 		mainpic.find('.mycircle').remove();
 		//заполнение списков и точек
 		fillGroupsList();
+		
 		//Добавляем custom стили для групп точек
-		var groupsall=$('.maingroups .list-group-item:not(.autohist)');
-		var groupscnt=groupsall.length;
+		//var groupsall=$('.maingroups .list-group-item:not(.autohist)');
+		//var groupscnt=groupsall.length;
 		for (z=0;z<groupscnt;z++){
-			var tmpgroup=groupsall.eq(z);
-			if (tmpgroup.get(0).hasAttribute('custombg')){
-				//добавил правило
-				addLastCss('.cg'+z,'background: '+tmpgroup.attr('custombg'));
-				//очищалка
-				mainpic.find('.cg'+z).addClass('ClearCg');
-			}
-			if (tmpgroup.get(0).hasAttribute('customstyle')){
-				addLastCss('.cg'+z,tmpgroup.attr('customstyle'));
-				//очищалка
-				mainpic.find('.cg'+z).addClass('ClearCg');
+			var tmpgroup=Profiles[num].GpoupList[z]; //groupsall.eq(z);
+			if (tmpgroup.indexOf('{!style=')>=0){
+				//Ищем стиль/правила
+				var StyleName=tmpgroup.slice(tmpgroup.indexOf('{!')+2+6,-1);
+				if (self[StyleName].custombg!=undefined){
+					//добавим правило
+					addLastCss('.cg'+z,'background: '+self[StyleName].custombg);
+					//очищалка от номера/числа
+					mainpic.find('.cg'+z).addClass('ClearCg');
+				}
+				if (self[StyleName].customstyle!=undefined){
+					//добавим правило
+					addLastCss('.cg'+z,self[StyleName].customstyle);
+					//очищалка от номера/числа
+					mainpic.find('.cg'+z).addClass('ClearCg');
+				}
 			}
 		}
 		//Добавляем custom стили для групп точек
+		
 		//Пересчет кол-ва точек в группе
 		UpdateCountGr();
 		//Уменьшаем значки
@@ -329,6 +366,33 @@ $(document).ready(function() {
 		if (globhist){loadhist();}
 		//Закрыть все группы
 		closeGroups();
+		//загрузка и отрисовка постоянных линий
+		if (Profiles[num]['pLines'] !== undefined){
+			try {
+				tmpResult = JSON.parse(Profiles[num]['pLines']);
+				drawPermanentLines(tmpResult);
+			}
+			catch(e) {
+				console.log('Постоянные линии неверный формат / permanenet lines corrupted'+e);
+			}
+		}
+	};
+	function drawPermanentLines(linesArr){
+		//leaderLineOptions
+		var tmpleaderLineOptions=leaderLineOptions;
+		if (Array.isArray(linesArr)){
+			linesArr.forEach(function(oneLine){
+				if (typeof oneLine === 'object'){
+					//draw oneLine
+					//lineOptionsArr['start']=undefined;
+					//lineOptionsArr['end']=undefined;
+					leaderLineOptions=oneLine;
+					let obj=drawLineEx(oneLine.x1,oneLine.y1,oneLine.x2,oneLine.y2);
+					obj.position();
+				}
+			});
+		}
+		leaderLineOptions=tmpleaderLineOptions;
 	};
 	function addLastCss(selector,propStr){
 		var Helpname='helperStyle';
@@ -368,21 +432,25 @@ $(document).ready(function() {
 		}
 	}
 	function UpdateCountGr(group=null){
-		let cnt;
-		let elemText;
-		let preg=/\(\d*\)/;
-		let curElem;
+		var cnt;
+		var elemText;
+		var preg=/\([\d\/\|\s]*\)/;
+		var curElem;
+		var curcnt=0;
+		//cnt - общее
+		//curcnt - текущего профиля
+		
+		
 		if (group!==null){
-			curElem=$('.maingroups .list-group-item').eq(group)
-			cnt=curElem.find('.list-group-item-text.active').length;
+			curElem=$('.maingroups .list-group-item').eq(group);
+			curcnt=curElem.find('.list-group-item-text').not('.active').length;
+			cnt=curElem.find('.list-group-item-text').length;
+			//cnt=curElem.find('.list-group-item-text.active').length;
 			elemText=curElem.find('.list-group-item-heading .text').html();
 			if (elemText.match(preg)){
-				elemText=elemText.replace(preg,'('+cnt+')');
+				elemText=elemText.replace(preg,'');
 			}
-			else
-			{
-				elemText+=' ('+cnt+')';
-			}
+			elemText+=' ('+curcnt+'/'+cnt+')';
 			curElem.find('.list-group-item-heading .text').html(elemText);
 		}
 		else{
@@ -393,6 +461,31 @@ $(document).ready(function() {
 				i++;
 			});
 		}
+		
+		//также обновляем историю
+		curElem=$('.maingroups .list-group-item.autohist');
+		elemText=curElem.find('.list-group-item-heading .text');
+		var newElText=elemText.html();
+		if (newElText.match(preg)){
+			//удаляем старое значение
+			newElText=newElText.replace(preg,'').trim();
+		}
+		
+		/* узнаем к-во*/
+		var mapCnt=0; //всего на карте.
+		//по карте надо обходить все группы
+		//self[Profiles[nindex].pointarr]
+		//так что только собираем по точкам на карте
+		mapCnt=$('#mainpic .mycircle').length;
+		cnt=globhist.length;
+		curcnt=0;
+		curcnt=curElem.find('.list-group-item-text').length;
+		/* узнаем к-во*/
+		
+		//добавляем новое значение
+		newElText+=' ('+curcnt+'/'+mapCnt+' |'+cnt+')';
+		elemText.html(newElText);
+		
 	}
 	function ChangePointIdex(StartIndex){
 		if (StartIndex){
@@ -545,10 +638,20 @@ $(document).ready(function() {
 		$('.mainfly').toggleClass('hide');
 	});
 	function addslashes( str ) {
-		return (str + '').replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
+		var slash="\\";
+		//return (str + '').replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
+		//return str.replace('/(["\'\])/g', "\\$1").replace('/\0/g', "\\0");
+		//return str.replace(/(["'\/])/g, slash.charAt(0)+"$1");
+		//проблема только при переводе
+		return str.replace(/(["'\/])/g, slash+"$1");
 	}
+	$('#flylist > .container > h2').on('click',function(event){
+		if (event.ctrlKey){
+			$(this).siblings('.maingroups').toggleClass('hide');
+		}
+	});
 	function drawpoint(tmppoint,ptarr,nindex){
-		//для вывода в файл settings, формирует массив точек
+		//для вывода в файл settings, формирует массив точек старой карты
 		ptprops='';
 		for (prop in self[Profiles[nindex].pointarr][tmppoint]) {
 			if (prop=='PointIndex'){continue;}
@@ -560,13 +663,29 @@ $(document).ready(function() {
 		}
 		return '\t{'+"\n"+ptprops+'\t},'+"\n";
 	}
-	$('#flylist > .container > h2').on('click',function(event){
-		if (event.ctrlKey){
-			$(this).siblings('.maingroups').toggleClass('hide');
+	function drawpointCur(el,group){
+		//для вывода в файл settings, формирует массив точек текущей карты
+		var elemmap=$(el);
+		var curbtn='';
+		if (typeof(group)=='undefined' || group=='undefined'){
+			group=el.data('group');
 		}
-	});
+		curbtn+="\t"+'{'+"\n";
+		curbtn+="\t\t"+"'Name':'"+addslashes(elemmap.attr('title'))+"',"+"\n";
+		curbtn+="\t\t"+"'CoordX':'"+elemmap.css('left')+"',"+"\n";
+		curbtn+="\t\t"+"'CoordY':'"+elemmap.css('top')+"',"+"\n";
+		curbtn+="\t\t"+"'Groups':'"+"["+group+"]',"+"\n";
+		curbtn+="\t"+'},'+"\n";
+		return curbtn;
+	}	
 	$('#flylist > .container > h2').dblclick(function(event){
 		var curtext='',alton=0;
+		var customStyles=[];
+		//добавляем постоянные линии в профиль
+		if (arrPLines.length){
+			Profiles[profileIndex]['pLines']=JSON.stringify(arrPLines);
+		}
+		
 		newGlobhist=[]; //временный массив истории для сортировки
 		if (event.altKey){
 			//сортируем массив ключей профиля в историческом порядке
@@ -579,7 +698,7 @@ $(document).ready(function() {
 		var groupi=0;
 		for (groupi=0;groupi<cntgroups;groupi++){
 			flylist=$('#flylist .maingroups .list-group-item:eq('+groupi+') .list-group-item-text');
-			flylist.each(function(){arrgroup[$(this).data('id')] = groupi;});
+			flylist.each(function(){let thisid=$(this).data('id'); if (thisid!=undefined){arrgroup[thisid] = groupi;} });
 		}
 		var tmpval='';
 		var tmpproftext='';
@@ -599,6 +718,7 @@ $(document).ready(function() {
 				}
 				//сортируем индексы
 				//инвертируем в случае отсутствия значения в истории - те, которых нет в истории сдвинутся вперед
+				//2-3, -(-1-3)=4,-(2--3)=5,-(-1--1)=0, числа положительные, значит больше и пойдут в конец массива
 				tmpsort.sort((a, b) => ((globhist.indexOf(a)<0 || globhist.indexOf(b)<0)?-(globhist.indexOf(a) - globhist.indexOf(b)):(globhist.indexOf(a) - globhist.indexOf(b))));
 				//Переделываем историю
 				for (tmppoint in tmpsort) {
@@ -618,12 +738,13 @@ $(document).ready(function() {
 			//update history
 			setCookie(historyName,JSON.stringify(newGlobhist),{expires:60*60*24*30,path:'/'})
 		}
-		//Собираем профили
+		//Собираем профили и старые и текущий
 		for (nindex in Profiles) {
 			tmpproftext='';
+			
 			for (prop in Profiles[nindex]) {
-				tmpval=Profiles[nindex][prop];
-				origTmpVal=Profiles[nindex][prop];
+				let tmpval=Profiles[nindex][prop];
+				let origTmpVal=Profiles[nindex][prop]; //const
 				if (typeof(tmpval)=='undefined'){
 					//хотя-бы пустой массив
 					tmpval='';
@@ -633,7 +754,19 @@ $(document).ready(function() {
 					//GpoupList
 					tmpproftext+='\t\t';
 					tmpproftext+="'"+prop+"':"+JSON.stringify(origTmpVal).replaceAll('"','\'')+","+"\n";
-					}else if (isNaN(tmpval)){
+					if (prop=='GpoupList'){
+						//origTmpVal - массив, перебор origTmpVal
+						origTmpVal.forEach(function(item, i, arr) {
+							//alert( i + ": " + item + " (массив:" + arr + ")" );
+							if (item.indexOf('{!style=')>=0){
+								var StyleName=item.slice(item.indexOf('{!')+2+6,-1);
+								customStyles.push(StyleName);
+							}
+						});
+						
+					}
+				}
+				else if (isNaN(tmpval)){
 					tmpproftext+='\t\t';
 					tmpproftext+="'"+prop+"':'"+tmpval+"',"+"\n";
 				}
@@ -651,7 +784,7 @@ $(document).ready(function() {
 			{
 				profhead+="\n\t"+'{'+"\n"+tmpproftext+'\t},';
 			}
-			//getall old points
+			//getall old points, старые точки
 			ptarr='';
 			if (alton){
 				for (tmppoint in arrsort[nindex]) {
@@ -669,20 +802,7 @@ $(document).ready(function() {
 		//Текущий профиль, точки
 		var curbtn='';
 		flylist=$('#mainpic .mycircle');
-		function drawpointCur(el,group){
-			var elemmap=$(el);
-			var curbtn='';
-			if (typeof(group)=='undefined' || group=='undefined'){
-				group=el.data('group');
-			}
-			curbtn+="\t"+'{'+"\n";
-			curbtn+="\t\t"+"'Name':'"+addslashes(elemmap.attr('title'))+"',"+"\n";
-			curbtn+="\t\t"+"'CoordX':'"+elemmap.css('left')+"',"+"\n";
-			curbtn+="\t\t"+"'CoordY':'"+elemmap.css('top')+"',"+"\n";
-			curbtn+="\t\t"+"'Groups':'"+"["+group+"]',"+"\n";
-			curbtn+="\t"+'},'+"\n";
-			return curbtn;
-		}
+		
 		//собираем точки
 		if (alton){
 			for (tmppoint in arrsort[profileIndex]) {
@@ -708,6 +828,21 @@ $(document).ready(function() {
 		}
 		//Точки текущей карты помещаются в конец
 		curtext+=tmpprof[profileIndex];
+		
+		//добавляем стили если они есть
+		if (customStyles.length){
+			//обрезаем стили
+			customStyles=Array.from(new Set(customStyles));
+			let tmpStylecnt=customStyles.length
+			for (let z=0;z<tmpStylecnt;z++){
+				//curtext+=self[customStyles[z]];
+				let bodytmp=JSON.stringify(self[customStyles[z]],null,"\t").replaceAll('"','\'')+"\n";
+				curtext+='var '+customStyles[z]+' = '+bodytmp;
+				
+			}
+		}
+		//добавляем стили если они есть
+		
 		//console.log(curtext);
 		navigator.clipboard.writeText(curtext).then(response => {
 			console.log('ok');
@@ -720,12 +855,13 @@ $(document).ready(function() {
 	$(document).on('keydown',function(event){
 		//if you're using jQuery, you can reliably use which as jQuery
 		//var x = event.which || event.keyCode;
+		var key = event.which || event.keyCode;
 		if (typeof(keymove)!='undefined' && keymove && typeof(lastId)!='undefined'){
 			var obj=$('#'+lastId);
 			var objleft=parseInt(obj.css('left'));
 			var objtop=parseInt(obj.css('top'));
 			//console.log(event.which);
-			switch(event.which){
+			switch(key){
 				case 37:
 				//left
 				obj.css('left',(objleft-1)+'px');
@@ -746,25 +882,39 @@ $(document).ready(function() {
 		}
 		
 	})
-	$('body').keypress(function(event){
+	$('body').add('#mainpic').keypress(function(event){
+		//событие устарело и желательно его избегать.
 		if (event.shiftKey && event.keyCode==68){
-			//отменяем выделение
+			//отменяем выделение, шифт d
 			if (selectedArr.length){
 				$(selectedArr).removeClass('ptSelect');
 				selectedArr=[];
 			}
 			event.preventDefault();
+			return;
+		}
+		if ((event.keyCode==114 || event.keyCode==1082) && !$(event.target).hasClass('searchInput') ){
+			//routeShow (r) и не поиск
+			console.log('routeshow');
+			(routeShow)?DeleteRoute():CreateRoute()
+			routeShow=1-routeShow;
+			$('#flycMenu .list-group-item-text[data-action="routeShow"]').toggleClass('active');
+			event.preventDefault();
+			return;
 		}
 		if (typeof(routeShow)!='undefined' && routeShow){
 			var changes=0;
-			if (event.keyCode==91 || event.keyCode==1093){
+			//[] - увеличивает/уменьшает всё, тут только для маршрутов
+			if (event.keyCode==219 || event.keyCode==91 || event.keyCode==1093){
 				//minus [
-				if (defRouteCount>2){
+				if (defRouteCount>3){
 					defRouteCount-=1;
 					changes=1;
+				}else{
+					event.preventDefault();
 				}
 			}
-			else if (event.keyCode==93 || event.keyCode==1098){
+			else if (event.keyCode==221 || event.keyCode==93 || event.keyCode==1098){
 				//plus ]
 				var maxCnt=$('#mainpic .mycircle').length;
 				if (defRouteCount<maxCnt){
@@ -773,15 +923,16 @@ $(document).ready(function() {
 				}
 			}
 			if (changes){
-				console.log('prevent');
 				event.preventDefault();
 				DeleteRoute();
 				CreateRoute();
 			}
+			//если не было изменений, то проверка продолжается
 		}
-		else if (circlept){
+		if (circlept){
 			//console.log(event.keyCode);
-			if (event.keyCode==91 || event.keyCode==1093){
+			//[] - увеличивает/уменьшает всё, тут только полотно в инфо прямоугольнике.
+			if (event.keyCode==219 || event.keyCode==91 || event.keyCode==1093){
 				//minus
 				//console.log('minus');
 				if (maptarget){
@@ -789,7 +940,7 @@ $(document).ready(function() {
 					maptarget.height(parseInt(maptarget.height())-10);
 				}
 			}
-			else if (event.keyCode==93 || event.keyCode==1098){
+			else if (event.keyCode==221 || event.keyCode==93 || event.keyCode==1098){
 				//plus
 				//console.log('plus');
 				if (maptarget){
@@ -802,10 +953,18 @@ $(document).ready(function() {
 			//console.log('search');
 		}
 		else{
-			if (event.keyCode==107){
+			if (event.keyCode==76 || event.keyCode==108 || event.keyCode==1076){
+				//drawLines (l)
+				(drawLines)?drawLinesOff():drawLinesOn()
+				drawLines=1-drawLines;
+				$('#flycMenu .list-group-item-text[data-action="drawLines"]').toggleClass('active');
+				event.preventDefault();
+			}
+			if (event.keyCode==75 || event.keyCode==107){
 				//keymove (k)
 				keymove=1-keymove;
 				$('#flycMenu .list-group-item-text[data-action="keymove"]').toggleClass('active');
+				event.preventDefault();
 			}
 			console.log(event.keyCode);
 		}
@@ -912,10 +1071,10 @@ $(document).ready(function() {
 			//на карте
 			var bonusClass='';
 			//Добавляем очищалку стиля для групп точек
-			var tmpgroup=$('.maingroups .list-group-item:not(.autohist)').eq(group);
-			if (tmpgroup.get(0).hasAttribute('custombg') || tmpgroup.get(0).hasAttribute('customstyle')){
-				//очищалка
-				//mainpic.find('.cg'+z).addClass('ClearCg');
+			//var tmpgroup=$('.maingroups .list-group-item:not(.autohist)').eq(group);
+			var tmpgroup=Profiles[profileIndex].GpoupList[group];
+			//если группа с кастом стилем.
+			if (tmpgroup.indexOf('{!style=')>=0){
 				bonusClass='ClearCg';
 			}
 			//Новая кнопка
@@ -1011,15 +1170,35 @@ $(document).ready(function() {
 			profileSelect(defaultProfile);
 		})
 	});
+	function drawLinesOff(){
+		//уже не рисуем направляющие линии
+		tmpPointsDx={};
+		tmpDirectrix=null;
+		maptarget=null;
+		$('.drawingTools').hide();
+		$('#flylist .maingroups').toggleClass('hide');
+	}
+	function drawLinesOn(){
+		//рисуем направляющие линии
+		//обнуляем чтобы они были первыми
+		tmpPointsDx={};
+		tmpDirectrix=null;
+		maptarget=$('#mainpic');
+		dLSelected=dLSelectDefault;
+		//выделяем активный инструмент
+		dLSelect(dLSelected);
+		$('.drawingTools').show();
+		//скрываем группы
+		$('#flylist .maingroups').toggleClass('hide');
+	}
 	$('#flycMenu .list-group-item-text').on('click',function(event){
 		let zobj=this.dataset.action;
 		let el=$(this);
+		
+		
+		self[zobj]=1-self[zobj];
+		
 		if (el.hasClass('active')){
-			el.removeClass('active');
-			if (zobj){
-				//keymove=0;
-				self[zobj]=0;
-			}
 			if (zobj=='invIndex'){
 				//0
 				$('#mainpic .mycircle').css('z-index','');
@@ -1031,21 +1210,11 @@ $(document).ready(function() {
 			if (zobj=='drawLines'){
 				//уже не рисуем направляющие линии
 				//console.log('drawlines');
-				tmpPointsDx={};
-				tmpDirectrix=null;
-				maptarget=null;
-				self[zobj]=0;
-				$('.drawingTools').hide();
-				$('#flylist .maingroups').toggleClass('hide');
+				drawLinesOff();
 			}			
 		}
 		else
 		{
-			el.addClass('active');
-			if (zobj){
-				//keymove=1;
-				self[zobj]=1;
-			}
 			if (zobj=='invIndex'){
 				//1
 				var maxindex=pointsarr.length;
@@ -1061,25 +1230,153 @@ $(document).ready(function() {
 			if (zobj=='drawLines'){
 				//рисуем направляющие линии
 				//обнуляем чтобы они были первыми
-				tmpPointsDx={};
-				tmpDirectrix=null;
-				maptarget=$('#mainpic');
-				self[zobj]=1;
-				$('.drawingTools').show();
-				$('#flylist .maingroups').toggleClass('hide');
-				//console.log('draw lines on');
+				drawLinesOn();
 			}
 		}
+		
+		el.toggleClass('active');
 	})
-	function drawLineTmp(x1,y1,x2,y2){
-		if (tmpDirectrix!=null && tmpDirectrix){
-			//перерисовываем
-			tmpDirectrix=correctLineStraight(tmpDirectrix,x2,y2);
+	$('.drawingToolsSetup .drawSetItem').on('click',function(e){
+		//left click
+		var el=$(this);
+		var dataKey;
+		var dataVal;
+		if (e.target.tagName!='INPUT' && !e.target.classList.contains('mark')){
+			dataKey=el.data('key');
+			if (dataKey=='middleLabel'){
+				dataVal=el.find('input').val();
+				if (dataVal.length){
+					//leaderLineOptions[dataKey]=dataVal;
+					let labelColor=$('.drawingToolsSetup .mark.labelColor').data('color');
+					leaderLineOptions[dataKey]={text: dataVal, color: labelColor};
+				}
+			}
+			el.find('.setOptions').toggleClass('active');
+			
 		}
-		else
-		{
-			//первый раз рисуем
-			tmpDirectrix=drawLineStraight(x1,y1,x2,y2);
+		
+	});
+	
+	$('.drawingToolsSetup .drawSetItem .glabel').on('click',function(e){
+		//left click
+		var el=$(this);
+		//var dataKey;
+		el.siblings('input').click();
+	});
+	$('.drawingToolsSetup .drawSetItem.grad input').on('click',function(e){
+		var el=$(this);
+		var parentEl=el.parent();
+		var elInput=parentEl.find('input');
+		var checkStatus=elInput.prop('checked');
+		
+		if (checkStatus){
+			//да
+			let StartColor=$('.drawingTools .setColors .first .mark').data('color');
+			let EndColor=lineColor=$('.drawingTools .setColors .back .mark').data('color');
+			
+			parentEl.addClass('active');
+			
+			parentEl.css('background',EndColor);
+			parentEl.css('background','linear-gradient(90deg, '+StartColor+' 0%, '+EndColor+' 100%)');
+			
+			leaderLineOptions[parentEl.data('key')]=true;
+			}else{
+			parentEl.removeClass('active');
+			parentEl.css('background','inherit');
+			
+			leaderLineOptions[parentEl.data('key')]=false;
+		}
+		
+	});
+	$('.drawingToolsSetup .setOptions .option').on('click',function(e){
+		//left click
+		var el=$(this);
+		var par=el.closest('.setOptions');
+		var dataVal;
+		var dataKey;
+		
+		dataKey=par.data('key');
+		dataVal=el.data('value');
+		if (dataVal=='input'){
+			return;
+		}
+		
+		//переключение активности
+		par.find('.option').removeClass('active');
+		el.addClass('active');
+		par.removeClass('active');
+		
+		e.stopPropagation();
+		
+		//Ставим что должны	
+		
+		if (dataVal.length && dataKey.length){
+			//Значения есть			
+			leaderLineOptions[dataKey]=dataVal;
+		}
+	});
+	$('.drawingTools .groupWpap2cl .drawItem').on('contextmenu',function(e){
+		//contextmenu
+		e.preventDefault();
+		e.stopPropagation();
+		//return false;
+	});
+	$('.drawingTools .groupWpap2cl .drawItem').on('mouseup',function(e){
+		if (e.button==2){
+			//right click
+			e.preventDefault();
+			e.stopPropagation();
+			/*console.log ('button '+e.button);*/
+			$('.drawingToolsSetup').toggleClass('active');
+			//return false;
+			}else{
+			//console.log ('button '+e.button);
+		}
+	});
+	$('.drawingTools .groupWpap2cl .drawItem').on('click',function(){
+		//выбрали инструмент, выделяем, только левый клик
+		dLSelect(null,$(this));
+	});
+	function dLSelect(index=null,drawObj=null){
+		var dTools=$('.drawingTools .groupWpap2cl .drawItem');
+		if (!index && drawObj){
+			index=dTools.index(drawObj);
+			//console.log(index);
+		}
+		dLSelected=index;
+		dTools.removeClass('selected');
+		dTools.eq(index).addClass('selected');
+	}
+	function drawLineTmp(x1,y1,x2,y2){
+		var curscale=Profiles[profileIndex].zoom;
+		
+		switch (dLSelected){
+			case 0:
+			//временная линия
+			if (tmpDirectrix!=null && tmpDirectrix){
+				//перерисовываем
+				tmpDirectrix=correctLineStraight(tmpDirectrix,x2*curscale,y2*curscale);
+			}
+			else
+			{
+				//первый раз рисуем
+				tmpDirectrix=drawLineStraight(x1*curscale,y1*curscale,x2*curscale,y2*curscale);
+			}
+			break;
+			case 1:
+			//постоянная линия
+			if (tmpDirectrix!=null && tmpDirectrix){
+				//перерисовываем
+				tmpDirectrix=correctLineStraight(tmpDirectrix,x2*curscale,y2*curscale);
+				//вот тут корректируем конечные координаты
+				arrPLines[arrPLines.length - 1]['x2']=x2*curscale;arrPLines[arrPLines.length - 1]['y2']=y2*curscale;
+			}
+			else
+			{
+				//первый раз рисуем
+				tmpDirectrix=drawLineEx(x1*curscale,y1*curscale,x2*curscale,y2*curscale);
+			}
+			break;
 		}
 	}
 	function correctLineStraight(obj,x2,y2){
@@ -1108,6 +1405,52 @@ $(document).ready(function() {
 				endPlug:'behind',
 			}
 		)
+	}
+	function drawLineEx(x1,y1,x2,y2){
+		//постоянная линия
+		var mapPic=document.getElementById('mainpic');
+		var elStart={};
+		var elend={};
+		var lineOptions={};
+		var lineOptionsArr={}; // временный массив для запоминания
+		
+		//это постоянная линия, записываем координаты во временный массив, а потом в общий массив линий
+		lineOptionsArr['x1']=x1;lineOptionsArr['y1']=y1;
+		lineOptionsArr['x2']=x2;lineOptionsArr['y2']=y2;
+		
+		//начальные координаты
+		elStart=LeaderLine.pointAnchor(mapPic, {x: x1, y: y1});
+		elend=LeaderLine.pointAnchor(mapPic, {x: x2, y: y2});
+		
+		//цвет и другие опции
+		lineColor=$('.drawingTools .setColors .back .mark').data('color');
+		lineOptions['start']=elStart;
+		lineOptions['end']=elend;
+		lineOptions['color']=lineColor;
+		
+		//merge опций по умолчанию и тех что уже есть
+		lineOptions={ ...lineOptions, ...leaderLineOptions };
+		
+		//merge опций временного массива и тех что выводятся
+		lineOptionsArr={...lineOptions,...lineOptionsArr};
+		lineOptionsArr['start']=undefined;
+		lineOptionsArr['end']=undefined;
+		
+		//преобазование некоторых опций
+		if (lineOptions['middleLabel']!=undefined){
+			lineOptions['middleLabel']=LeaderLine.captionLabel({text: lineOptions['middleLabel']['text'], color: lineOptions['middleLabel']['color']});
+		}
+		if (lineOptions['gradient']!=undefined && lineOptions['gradient']==1){
+			let StartColor=$('.drawingTools .setColors .first .mark').data('color');
+			lineOptions['startPlugColor']=StartColor;
+			lineOptions['endPlugColor']=lineColor;
+		}
+		
+		
+		//это постоянная линия, запоминаем её.
+		arrPLines.push(lineOptionsArr);
+		
+		return new LeaderLine(lineOptions);
 	}
 	
 	function DeleteRoute(){
@@ -1161,7 +1504,7 @@ $(document).ready(function() {
 			}
 			prevElem=this;
 		});
-
+		
 		//скрываем
 		tmphide.forEach(function(element){
 			element.classList.add('hide');
@@ -1171,7 +1514,10 @@ $(document).ready(function() {
 		//вычитаем игнор лист
 		var ignoreList=[];
 		//.not('#mapoint2,#mapoint3')
-		globIgnore.forEach(function(element){  let arrelem=element.split(profSym);if (arrelem[1]==self['Profiles'][profileIndex].pointarr){ ignoreList.push('#'+preId+arrelem[0]);} });
+		//игнор лист
+		if (globIgnore && globIgnore.length){
+			globIgnore.forEach(function(element){  let arrelem=element.split(profSym);if (arrelem[1]==self['Profiles'][profileIndex].pointarr){ ignoreList.push('#'+preId+arrelem[0]);} });
+		}
 		//вычисляем маршрут
 		var curRoute=$('#mainpic .mycircle').not('.hide').not(ignoreList.join(',')).slice(0,defRouteCount);
 		//var curRoute={};
@@ -1190,7 +1536,7 @@ $(document).ready(function() {
 			if (lastHist[1]==self['Profiles'][profileIndex].pointarr){
 				var dataIdFull=lastHist[0]+profSym+self['Profiles'][profileIndex].pointarr;
 				//Проверка если в игнор листе
-				if (!globIgnore.includes(dataIdFull)){
+				if (globIgnore && !globIgnore.includes(dataIdFull)){
 					curRoute=jQuery.merge($('#'+lastHist[0]),curRoute)
 					options.firstHist=1;
 				}
@@ -1286,7 +1632,7 @@ $(document).ready(function() {
 		var dataid=parentel.data('itemId');
 		var dataIdFull=dataid+profSym+self['Profiles'][profileIndex].pointarr;
 		//Проверка
-		if (!globIgnore.includes(dataIdFull)){
+		if (globIgnore && !globIgnore.includes(dataIdFull)){
 			//добавление в игнор лист
 			globIgnore.push(dataIdFull);
 			//update ignore
@@ -1341,9 +1687,30 @@ $(document).ready(function() {
 		//console.log(event);
 		if (event.target.className.indexOf('mycircle')>=0){mapcircle=1;}
 		if (event.shiftKey && mapcircle==1 && !gsize){
+			let elem=$(event.target);
 			//хотим изменить маркер
 			var desc = prompt("Описание:", event.target.title) || event.target.title;
 			if (desc != null) {
+				let sibs=elem.parent().find('.mycircle');
+				numprof=sibs.index(elem);
+				//также запишем в профиль
+				if (self[Profiles[profileIndex].pointarr][numprof].Name==event.target.title){
+					//старое описание совпадает
+					self[Profiles[profileIndex].pointarr][numprof].Name=desc;
+				}
+				else{
+					console.log('ошибка, описание не совпадает '+self[Profiles[profileIndex].pointarr][numprof].Name);
+					//либо придется искать новое
+					numprof=self[Profiles[profileIndex].pointarr][numprof].findIndex(user => user.Name == event.target.title)
+					if (numprof){
+						console.log('нашел новую точку '+self[Profiles[profileIndex].pointarr][numprof].Name);
+						self[Profiles[profileIndex].pointarr][numprof].Name=desc;
+					}
+					else
+					{
+						console.log('повторно ничего не нашел ');
+					}
+				}
 				event.target.title=desc;
 			}
 		}
@@ -1455,6 +1822,7 @@ $(document).ready(function() {
 	$('body').mouseup(function(event){
 		//console.log('mouseup');
 		var mainpic=$('#mainpic');
+		var curscale=Profiles[profileIndex].zoom;
 		mainpic.removeClass('active');
 		if (event.altKey && mapcircle==1){
 			var oldx,oldy;
@@ -1494,10 +1862,8 @@ $(document).ready(function() {
 				UpdateCountGr(group);
 				var bonusClass='';
 				//Добавляем очищалку стиля для групп точек
-				var tmpgroup=$('.maingroups .list-group-item:not(.autohist)').eq(group);
-				if (tmpgroup.get(0).hasAttribute('custombg') || tmpgroup.get(0).hasAttribute('customstyle')){
-					//очищалка
-					//mainpic.find('.cg'+z).addClass('ClearCg');
+				var tmpgroup=Profiles[profileIndex].GpoupList[group];
+				if (tmpgroup.indexOf('{!style=')>=0){
 					bonusClass='ClearCg';
 				}
 				////////
@@ -1521,12 +1887,13 @@ $(document).ready(function() {
 				//если только кликаем по изображению а не по меню.
 				if (event.target.tagName=="IMG"){
 					//нужны координаты относительно картинки
+					//var curscale=Profiles[profileIndex].zoom;
 					tmpPointsDx.x1=event.offsetX;
 					tmpPointsDx.y1=event.offsetY;
 				}
 			}
 		}
-		if ((event.ctrlKey && event.shiftKey) && mapposcx && mapposx && !circlept){
+		if ((event.ctrlKey && event.shiftKey) && mapposcx && mapposx && !circlept && maptarget!=null ){
 			//Отмена, возвращаем старые координаты
 			maptarget.css('left',mapposcx+'px');
 			maptarget.css('top',mapposcy+'px');
@@ -1558,6 +1925,8 @@ $(document).ready(function() {
 		var curscale=1;
 		var element = document.querySelector('#mainpic');
 		var scaleX = element.getBoundingClientRect().width / element.offsetWidth;
+		var curscale=Profiles[profileIndex].zoom;
+		
 		if ($(this).hasClass('active') || circlept || Selectpt || drawLines){
 			var mainpic;
 			//если это круг
@@ -1598,27 +1967,27 @@ $(document).ready(function() {
 					maptarget.css('height',cy+'px');
 				}
 			}
-			else if (drawLines){
+			else if (drawLines && event.target.tagName=="IMG"){
 				//это мы в процессе рисования временной линии
 				mainpic=null;
 				//перемещаем точку 2
-				if (tmpPointsDx.x1!=undefined && maptarget && mapposx!=0){
+				//if (tmpPointsDx.x1!=undefined && maptarget && mapposx!=0){ - раньше было
+				if (tmpPointsDx.x1!=undefined){
 					//мы должны прорисовать линию от старых координат до новых, но возможно стоит только точки обновить.
 					var xEnd=event.offsetX;
 					var yEnd=event.offsetY;
 					if (event.shiftKey){
-						var cx=Math.abs(event.offsetX-tmpPointsDx.x1);
-						var cy=Math.abs(event.offsetY-tmpPointsDx.y1);
+						var cx=Math.abs(xEnd-tmpPointsDx.x1);
+						var cy=Math.abs(yEnd-tmpPointsDx.y1);
 						//распрямляем
 						//по идее нам надо вычислить расстояния x2-x1 y2-y1
 						if (cx<=cy){
 							//и какое меньше, допустим x - выравниваем по горизонтали, усредняем x
 							xEnd=tmpPointsDx.x1;
-						}else{
+							}else{
 							yEnd=tmpPointsDx.y1;
 						}
 					}
-					
 					drawLineTmp(tmpPointsDx.x1,tmpPointsDx.y1,xEnd,yEnd);
 				}
 			}
@@ -1913,7 +2282,8 @@ $(document).ready(function() {
 		var el=$(this);
 		var par=el.parent(); //.list-group-item-text
 		var groupnum=par.data('group');
-		if (par.hasClass('active')){
+		var parActive=par.hasClass('active');
+		if (parActive){
 			//Скрываем
 			par.removeClass('active');
 			$('#'+par.data('id')).addClass('hide');
@@ -1952,37 +2322,36 @@ $(document).ready(function() {
 			}
 			else
 			{
-				//it is history - unclick from other
-				var flylist=$('#flylist .list-group-item-text').not(par);
-				var parid=par.data('id');
-				let histprof=par.data('prof');
-				if (profileIndex==histprof){
-					flylist.each(function(){
-						if ($(this).data('id')==parid){
-							$(this).removeClass('active');
-						}
-					});
-				}
 			}
 		}
 		else
 		{
 			par.addClass('active');
 			$('#'+par.data('id')).removeClass('hide');
-			if (par.parent().hasClass('autohist')){
-				//it is history - ununclick from other
-				var flylist=$('#flylist .list-group-item-text').not(par);
-				var parid=par.data('id');
-				var histprof=par.data('prof');
-				if (profileIndex==histprof){
-					flylist.each(function(){
-						if ($(this).data('id')==parid){
+		}
+		
+		if (par.parent().hasClass('autohist')){
+			
+			var flylist=$('#flylist .list-group-item-text').not(par);
+			var parid=par.data('id');
+			var histprof=par.data('prof');
+			if (profileIndex==histprof){
+				flylist.each(function(){
+					if ($(this).data('id')==parid){
+						if (parActive){
+							//it is history - unclick from other
+							$(this).removeClass('active');
+						}
+						else
+						{
+							//it is history - ununclick from other
 							$(this).addClass('active');
 						}
-					});
-				}
+					}
+				});
 			}
 		}
+		
 		UpdateCountGr(groupnum);
 	});
 	$('#flylist').on('click','.autohist .list-group-item-text',function(e){
@@ -2201,6 +2570,28 @@ $(document).ready(function() {
 			elmark.css('background',color);
 		});
 	});
+	/*$('.drawingTools .setColors .mark').on('click',function(){
+		var elmark=$(this);
+		var inputel=elmark.parents('.setColors').find('input[name=setcolors]');
+		inputel.click();
+		inputel.one('change',function(){
+		var elinp=$(this);
+		var color=elinp.val();
+		elmark.data('color',color);
+		elmark.css('background',color);
+		});
+	});*/
+	$('.drawingToolsSetup .setOptions .mark').on('click',function(){
+		var elmark=$(this);
+		var inputel=elmark.parents('.setOptions').find('input.setcolors');
+		inputel.click();
+		inputel.one('change',function(){
+			var elinp=$(this);
+			var color=elinp.val();
+			elmark.data('color',color);
+			elmark.css('background',color);
+		});
+	});
 	
 	$('.helpp > div > h2').on('click',function(){
 		$(this).next().toggleClass('hide');
@@ -2330,7 +2721,7 @@ $(document).ready(function() {
 	function getCookie(name) {
 		//устаревшее
 		matches=[];
-		matches[1]=localStorage.getItem(historyName);
+		matches[1]=localStorage.getItem(name);
 		ret=matches ? decodeURIComponent(matches[1]) : undefined;
 		return ret;
 	}
@@ -2341,8 +2732,7 @@ $(document).ready(function() {
 		localStorage.setItem(name, value);
 	}
 	function deleteCookie(name) {
-		//устаревшее
 		localStorage.removeItem(name);
 	}	
 	//работа с куками
-});																									 																														33
+});

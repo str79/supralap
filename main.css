@@ -39,6 +39,7 @@ body .unselectable *{
 	-webkit-box-shadow: 0px 0px 8px 0px rgba(255, 255, 255, 0.5);
 	-moz-box-shadow: 0px 0px 8px 0px rgba(255, 255, 255, 0.5);
 	box-shadow: 0px 0px 8px 0px rgba(255, 255, 255, 0.5);	
+	display: inline-block;
 }
 body .hide,
 body .hidden{
@@ -372,8 +373,68 @@ body .hidden{
 	padding:0;
 }
 /* image tools*/
+.drawingToolsSetup{
+	display: none;
+	width: fit-content;
+}
+.drawingToolsSetup.active{
+display: inline-flex;
+  background: #fff;
+  border: 1px solid #000;
+  border-radius: .3rem;
+}
+.drawingToolsSetup .groupGrid{
+	display: grid;
+	grid-template-columns: repeat(1,26px);
+	justify-content: space-between;
+	gap: 0 10px;
+}
+.drawingToolsSetup .drawSetItem{
+	border: 1px solid #000;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 5px;
+}
+.drawingToolsSetup .setOptions{
+	display: none;
+}
+.drawingToolsSetup .setOptions.active{
+	display: block;
+	position: absolute;
+	background-color: #fff;
+	border: 1px solid #000;
+	border-radius: .25rem;
+	top: 64px;
+}
+.drawingToolsSetup .setOptions .option{
+	border: 1px solid #000;
+}
+.drawingToolsSetup .setOptions .option:not(.nohover):hover{
+	background-color: #007bff;
+}
+.drawingToolsSetup .flexGroup{
+	display: flex;
+	gap: 10px;
+}
 .drawingTools{
 	display: none;
+	width: fit-content;
+}
+.drawingTools .groupWpap2cl{
+	display: grid;
+	grid-template-columns: repeat(2,26px);
+	justify-content: space-between;
+	gap: 0 10px;
+}
+.drawingTools .drawItem{
+	border: 1px solid #fff;
+	display: flex;
+	justify-content: center;
+	align-items: center;	
+}
+.drawingTools .drawItem.selected{
+	border: 1px solid #878787;	
 }
 .drawingTools .setColors {
 	display: inline-block;
@@ -390,7 +451,13 @@ body .hidden{
 	border: 1px solid #000;
 	position: absolute;
 }
-.drawingTools .setColors .mark{
+.drawingToolsSetup .colorBox{
+	width: 26px;
+	height: 26px;
+	border: 1px solid #000;
+}
+.drawingTools .setColors .mark,
+.drawingToolsSetup .colorBox .mark{
 	width: 22px;
 	height: 22px;
 	margin: 1px;
@@ -406,7 +473,8 @@ body .hidden{
 .drawingTools .setColors .first .mark{
 	background: #000;
 }
-.drawingTools .setColors .back .mark{
+.drawingTools .setColors .back .mark,
+.drawingToolsSetup .colorBox .mark{
 	background: #fff;
 }
 /* image tools*/

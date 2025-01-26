@@ -5,8 +5,8 @@ var langStr={
 	ACT_GLOBALMOVE:'Global move',
 	ACT_GLOBALSIZE:'Global size',
 	ACT_YONGUP:'Young numbers are flowing up.',
-	ACT_BUILDROUTE:'Build a route',
-	ACT_TEMPGLINES:'Drawing Guide Lines',
+	ACT_BUILDROUTE:'Build a route (r)',
+	ACT_TEMPGLINES:'Drawing Guide Lines (l)',
 	FASTACT:'Fast actions:',
 	FASTACT_SAVEMAP:'Save map position and size in memory.',
 	FASTACT_NEWEMAP:'Create a new map (based on the current one).',
@@ -24,6 +24,7 @@ var langStr={
 	GROUPCMENU:'Group menu',
 	GROUPCMENU_MOVE:'Move',
 	GROUPCMENU_REMOVE:'Remove',
+	CONTMENU:'Point menu',
 	CONTMENU_CHGROUP:'Change group',
 	CONTMENU_DELPOINT:'Remove Item',
 	CONTMENU_ADDIGNORE:'Ignore for routes',
@@ -119,6 +120,11 @@ var langStr={
 	Drawing lines - turns on the line drawing mode, click on the map - first point, then interactively click on the desired location of second point, \
 	the line will fixed, then you can draw a new one or turn off this mode, also if you hold shift while selecting second point, \
 	then the line will become straight. It is also possible to change the line color in the drawing toolbar; the default is the back color. <br> \
+	It is now possible to select other tools, such as a permanent line. \
+	Constant line - coordinates are written to memory for later export to settings.js. \
+	Added line drawing settings - open by right-clicking on the permanent line icon, \
+	each setting is opened with a left mouse click, the selected position is remembered in memory and used when drawing a line, \
+	Also, when you select an option, the setting closes; some settings, such as the inscription, are remembered only when you close (click again) this setting. \
 	<br>---Quick Actions<br> \
 	Saving the position of current map (and other maps) in memory - saves the position for profile settings, for convenience, also saves zoom,<br> \
 	new map (profile) - creates a new profile in memory with one new label, convenient if there are no cards at all or if you need to duplicate the current one<br> \
