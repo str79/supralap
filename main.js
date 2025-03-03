@@ -8,7 +8,7 @@ var routeShow=0; //показать маршрут
 	на будущее
 	&#9203;
 	&#9749;
-	&#9851;
+	---------------&#9851;
 	&#9855;
 	&#9971;
 	&#9999;
@@ -50,22 +50,37 @@ $(document).ready(function() {
 	var dLSelected=0;//какой инструмент выбирать по умолчанию (0 - tmpLine) в режиме рисования
 	var leaderLineOptions={};//опции для постоянной линии
 	var arrPLines=[];//Массив постоянных линий
+	var keyBinging=-1;//Включен ли режим отлова клавиш, заодно и индекс клавиши
+	var customKeys={};//Ассоциативный массив настроек ручных назначений кнопок
+	var defaultKeys={
+		"routeShow":82,
+		"drawLines":76,
+		"keymove":75,
+	};//Ассоциативный массив стандартных настроек назначений кнопок
+	var usedKeys={};//Ассоциативный массив применяемых настроек назначений кнопок
 	
+	preinit();
 	
-	//загрузка истории
-	//historyName=$('.historyName').text();
-	historyName=$('.gameName').text()+'hist';
-	settingsName=$('.gameName').text()+'settings';
-	IgnoreName=$('.gameName').text()+'ignore';
-	//Загрузка настроек
-	loadSettings();
-	//Установка настроек
-	setupSettings();
-	//загрузка карт
-	loadMAPSettings(defaultLang).then((result1) => {
-		//console.log(result1);
-		init();
-	})
+	function preinit(){
+		//загрузка истории
+		//historyName=$('.historyName').text();
+		historyName=$('.gameName').text()+'hist';
+		settingsName=$('.gameName').text()+'settings';
+		IgnoreName=$('.gameName').text()+'ignore';
+		//Загрузка настроек
+		loadSettings();
+		//Установка настроек и копирование во внутренние переменные
+		setupSettings();
+		//внутреняя замена настроек привязки клавишы
+		mergeCustomKeys();
+		
+		//загрузка карт
+		loadMAPSettings(defaultLang).then((result1) => {
+			//console.log(result1);
+			init();
+		})
+	}
+	
 	function init(){
 		//Загрузка истории
 		loadHistory();
@@ -74,6 +89,8 @@ $(document).ready(function() {
 		//Выводим группы
 		$('#flyProf .list-group-item').not('.custom').remove();
 		$('#flyProf .mainfly').append(wrapGroups());
+		//Включаем язык в html
+		document.documentElement.lang=defaultLang;
 		//Включаем язык
 		$('.langSelect .list-group-item').each(function(){
 			if (this.innerText.trim()==defaultLang){
@@ -82,14 +99,46 @@ $(document).ready(function() {
 		})
 		//меняем язык
 		langSelect(defaultLang).then((data)=>{
+			//внешняя замена настроек привязки клавиш
+			setupCustomKeys();
 			//console.log(data);
 			//подгружаем профиль
 			profileSelect(defaultProfile);
 		});
 	}
+	function setupCustomKeys(){
+		//в настройке
+		var strkey;
+		$('#setupDlg .list-group-item').each(function(){
+			var el=$(this);
+			var actionKey=el.data('actionkey');
+			strkey=translateKeyNum(usedKeys[actionKey]);
+			if (strkey){
+				el.find('.textKeyBind').text(strkey);
+			}
+			
+		});
+		//в меню действий
+		var menuaction=$('#flycMenu .list-group-item-text');
+		for(let elKey in usedKeys){
+			let strkey=translateKeyNum(usedKeys[elKey]);
+			if (strkey){
+				let elmenu=menuaction.filter('[data-action='+elKey+']')
+				elmenu.find('.hotkey').text(strkey);
+			}
+		}
+	}
+	function mergeCustomKeys(){
+		//merge опций по умолчанию и тех что уже есть
+		usedKeys={ ...defaultKeys, ...customKeys };		
+	}
 	function setupSettings(){
-		if (globSettings['lang']){
+		//установка настроек
+		if ('lang' in globSettings) {
 			defaultLang=globSettings['lang'];
+		}
+		if ('customKeys' in globSettings) {
+			customKeys=globSettings['customKeys'];
 		}
 	}
 	function loadSettings(){
@@ -106,6 +155,11 @@ $(document).ready(function() {
 			globSettings={};
 		}
 	}
+	function saveSettings(){
+		//обновляем настройки
+		localStorage.setItem(settingsName, encodeURIComponent(JSON.stringify(globSettings)));
+	}
+	
 	function loadHistory(){
 		globhist=getCookie(historyName);
 		try {
@@ -853,35 +907,95 @@ $(document).ready(function() {
 		return false;
 	});
 	$(document).on('keydown',function(event){
+		//The event.which property has been deprecated. Use event.key wherever possible.
 		//if you're using jQuery, you can reliably use which as jQuery
 		//var x = event.which || event.keyCode;
 		var key = event.which || event.keyCode;
-		if (typeof(keymove)!='undefined' && keymove && typeof(lastId)!='undefined'){
-			var obj=$('#'+lastId);
-			var objleft=parseInt(obj.css('left'));
-			var objtop=parseInt(obj.css('top'));
-			//console.log(event.which);
-			switch(key){
-				case 37:
-				//left
-				obj.css('left',(objleft-1)+'px');
-				break;
-				case 38:
-				//up
-				obj.css('top',(objtop-1)+'px');
-				break;
-				case 39:
-				//right
-				obj.css('left',(objleft+1)+'px');
-				break;
-				case 40:
-				//down
-				obj.css('top',(objtop+1)+'px');
-				break;
+		var el=$(event.target);
+		
+		if (keyBinging>=0){
+			var allSibs=$('#setupDlg .list-group-item');
+			console.log(key);
+			var keyStr=translateKeyNum(key);
+			var actionKey=allSibs.eq(keyBinging).data('actionkey');
+			
+			if (keyStr!='' && actionKey){
+				allSibs.eq(keyBinging).removeClass('active').find('.textKeyBind').html(keyStr);
+				
+				//сохраняем эту клавишу в настройках
+				customKeys[actionKey]=key;
+				keyBinging=-1;
+				
+				//обновляем внутренние настройки клавиш
+				mergeCustomKeys();
+				
+				//обновляем настройки
+				globSettings['customKeys']=customKeys;
+				saveSettings();
+				
+				//обновляем вид диалогов настройки клавиш
+				setupCustomKeys();
+				
+				
+				event.preventDefault();
+				return;
+			}
+			
+		}
+		//и не поиск
+		if (!$(event.target).hasClass('searchInput')){
+			if (typeof(keymove)!='undefined' && keymove && typeof(lastId)!='undefined'){
+				var obj=$('#'+lastId);
+				var objleft=parseInt(obj.css('left'));
+				var objtop=parseInt(obj.css('top'));
+				//console.log(event.which);
+				switch(key){
+					case 37:
+					//left
+					obj.css('left',(objleft-1)+'px');
+					break;
+					case 38:
+					//up
+					obj.css('top',(objtop-1)+'px');
+					break;
+					case 39:
+					//right
+					obj.css('left',(objleft+1)+'px');
+					break;
+					case 40:
+					//down
+					obj.css('top',(objtop+1)+'px');
+					break;
+				}
+			}
+			
+			if (key==usedKeys['keymove']){
+				//keymove (k)
+				keymove=1-keymove;
+				$('#flycMenu .list-group-item-text[data-action="keymove"]').toggleClass('active');
+				event.preventDefault();
+				
+			}
+			if (key==usedKeys['drawLines']){
+				//drawLines (l)
+				(drawLines)?drawLinesOff():drawLinesOn()
+				drawLines=1-drawLines;
+				$('#flycMenu .list-group-item-text[data-action="drawLines"]').toggleClass('active');
+				event.preventDefault();
+			}
+			if ((key==usedKeys['routeShow'])  ){
+				//routeShow (r)
+				console.log('routeshow');
+				(routeShow)?DeleteRoute():CreateRoute()
+				routeShow=1-routeShow;
+				$('#flycMenu .list-group-item-text[data-action="routeShow"]').toggleClass('active');
+				event.preventDefault();
+				return;
 			}
 		}
 		
 	})
+	//oneaction
 	$('body').add('#mainpic').keypress(function(event){
 		//событие устарело и желательно его избегать.
 		if (event.shiftKey && event.keyCode==68){
@@ -893,15 +1007,6 @@ $(document).ready(function() {
 			event.preventDefault();
 			return;
 		}
-		if ((event.keyCode==114 || event.keyCode==1082) && !$(event.target).hasClass('searchInput') ){
-			//routeShow (r) и не поиск
-			console.log('routeshow');
-			(routeShow)?DeleteRoute():CreateRoute()
-			routeShow=1-routeShow;
-			$('#flycMenu .list-group-item-text[data-action="routeShow"]').toggleClass('active');
-			event.preventDefault();
-			return;
-		}
 		if (typeof(routeShow)!='undefined' && routeShow){
 			var changes=0;
 			//[] - увеличивает/уменьшает всё, тут только для маршрутов
@@ -910,7 +1015,7 @@ $(document).ready(function() {
 				if (defRouteCount>3){
 					defRouteCount-=1;
 					changes=1;
-				}else{
+					}else{
 					event.preventDefault();
 				}
 			}
@@ -953,19 +1058,6 @@ $(document).ready(function() {
 			//console.log('search');
 		}
 		else{
-			if (event.keyCode==76 || event.keyCode==108 || event.keyCode==1076){
-				//drawLines (l)
-				(drawLines)?drawLinesOff():drawLinesOn()
-				drawLines=1-drawLines;
-				$('#flycMenu .list-group-item-text[data-action="drawLines"]').toggleClass('active');
-				event.preventDefault();
-			}
-			if (event.keyCode==75 || event.keyCode==107){
-				//keymove (k)
-				keymove=1-keymove;
-				$('#flycMenu .list-group-item-text[data-action="keymove"]').toggleClass('active');
-				event.preventDefault();
-			}
 			console.log(event.keyCode);
 		}
 	})
@@ -976,6 +1068,39 @@ $(document).ready(function() {
 	$('#flyProf').on('click','.oneaction',function(event){
 		$('#flyaoMenu').toggleClass('hide').css({'left':$('body').width()-$('#flyaoMenu').width()-parseInt($('.container').css('padding-right'))-$('.mainfly').width(),'top':$(this).offset().top});
 		$('#flyaoMenu').on('click',function(){$(this).addClass('hide')});
+	});
+	$('#flyProf').on('click','.setupBtn',function(event){
+		$('#setupDlg').toggleClass('hide'); //.css({'left':$('body').width()-$('#flyaoMenu').width()-parseInt($('.container').css('padding-right'))-$('.mainfly').width(),'top':$(this).offset().top});
+		//$('#setupDlg').on('click',function(){$(this).addClass('hide')});
+	});
+	$('#setupDlg .textKeyChange').on('click',function(){
+		//нажали на смену горячей клавиши, включаем режим отлова клавиш
+		var allSibs=$('#setupDlg .list-group-item');
+		var thisGroup=$(this).parent('.list-group-item');
+		//индекс
+		var indexPar=allSibs.index(thisGroup);
+		
+		keyBinging=indexPar;
+		
+		allSibs.removeClass('active');
+		thisGroup.addClass('active');
+		
+		event.preventDefault();
+	});
+	$('#setupDlg .keysReset').on('click',function(){
+		//reset настроек
+		customKeys={};
+		//обновляем внутренние настройки клавиш
+		mergeCustomKeys();
+		
+		//обновляем настройки
+		globSettings['customKeys']=customKeys;
+		saveSettings();
+		
+		//обновляем вид диалогов настройки клавиш
+		setupCustomKeys();
+		
+		event.preventDefault();
 	});
 	$('#flyaoMenu .list-group-item .savemap').on('click',(event)=>{
 		var el=$(event.target);
@@ -1158,10 +1283,13 @@ $(document).ready(function() {
 		globSettings['lang']=defaultLang;
 		//меняем язык
 		langSelect(defaultLang);
+		//меняем язык в html
+		//document.documentElement.lang=='ru'
+		document.documentElement.lang=defaultLang;
 		//hide tab
 		el.parent().toggleClass('hide');
 		//обновляем настройки
-		localStorage.setItem(settingsName, encodeURIComponent(JSON.stringify(globSettings)));
+		saveSettings();
 		//перезагружаем карту
 		loadMAPSettings(defaultLang).then((result1) => {
 			//Выводим группы
@@ -2733,6 +2861,73 @@ $(document).ready(function() {
 	}
 	function deleteCookie(name) {
 		localStorage.removeItem(name);
-	}	
+	}
 	//работа с куками
+	
+	
+	function swapObj(obj) {
+		//меняет значение на ключи
+		return Object.fromEntries(Object.entries(obj).map(([key,value])=>[value,key]));
+	}
+	function getKeysArr() {
+		var keys={
+			48:'0',
+			49:'1',
+			50:'2',
+			51:'3',
+			52:'4',
+			53:'5',
+			54:'6',
+			55:'7',
+			56:'8',
+			57:'9',
+			
+			65:'a',
+			66:'b',
+			67:'c',
+			68:'d',
+			69:'e',
+			70:'f',
+			71:'g',
+			72:'h',
+			73:'i',
+			74:'j',
+			75:'k',
+			76:'l',
+			77:'m',
+			78:'n',
+			79:'o',
+			80:'p',
+			81:'q',
+			82:'r',
+			83:'s',
+			84:'t',
+			85:'u',
+			86:'v',
+			87:'w',
+			88:'x',
+			89:'y',
+			90:'z',
+		};
+		return keys;
+	}
+	function translateKeyChar(keynum){
+		//обратный перевод - из буквы в число
+		var arrkeys=swapObj(getKeysArr());
+		var result='';
+		if (keynum in arrkeys){
+			result=arrkeys[keynum];
+		}
+		
+	return result;	}
+	function translateKeyNum(keynum){
+		//перевод клавиш из номера в строку
+		var arrkeys=getKeysArr();
+		var result='';
+		if (keynum in arrkeys){
+			result=arrkeys[keynum];
+		}
+		
+		return result;
+	}
 });

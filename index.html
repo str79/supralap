@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="RU">
 	<head>
 		<meta charset="UTF-8">
 		<title>Supraland maps</title>
@@ -16,6 +16,15 @@
 		<link rel="stylesheet" href="main.css">
 		<!--route mapping is used-->
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/leader-line/1.0.7/leader-line.min.js"></script>
+		<script>
+			if (detectMob){
+				console.log('загружен мобильный, проверка основных файлов');
+			}
+		 function detectMob() {
+			return ( ( window.innerWidth <= 800 ) && ( window.innerHeight <= 600 ) );
+		}	
+			
+		</script>
 	</head>
 	<body>
 		<div class="gameName hidden">Supraland</div>
@@ -38,7 +47,7 @@
 				<div class="list-group hide">
 					<div href="#" class="list-group-item">
 						<p class="list-group-item-text">
-							v=2.22<br>
+							v=2.23<br>
 							<span class="langCh">
 								HELP_TEXT
 							</span>
@@ -104,13 +113,47 @@
 					<span class="runicon"></span>
 				</p>
 			</div>		
-		</div>		
+		</div>
+		<!-- диалог настройки -->
+		<div id="setupDlg" class="hide">
+			<div class="container">
+				<div class="list-group gsetup">
+					<div class="list-group-item"  >
+						<!-- .keyL	 -->
+						<span class="textDesc langCh">SETUPDLG_TITLE</span>
+					</div>
+					<div class="list-group-item" data-actionkey="routeShow" >
+						<!-- .keyL	 -->
+						<span class="textDesc langCh">SETUPDLG_ROUTESHOW</span>
+						<span class="textKeyBind">r</span>
+						<span class="textKeyChange unselectable">&#9851;</span>
+					</div>
+					<!-- .keyR	 -->
+					<div class="list-group-item" data-actionkey="drawLines" >
+						<span class="textDesc langCh">SETUPDLG_DRAWLINES</span>
+						<span class="textKeyBind">l</span>
+						<span class="textKeyChange unselectable">&#9851;</span>
+					</div>
+					<div class="list-group-item" data-actionkey="keymove" >
+						<span class="textDesc langCh">SETUPDLG_KEYMOVE</span>
+						<span class="textKeyBind">k</span>
+						<span class="textKeyChange unselectable">&#9851;</span>
+					</div>
+					<div class="list-group-item">
+						<span class="keysReset langCh">SETUPDLG_RESET</span>
+					</div>
+				</div>			
+			</div>			
+		</div>
 		<div id="flyProf">
 			<div class="container">
-				<h2 class="dib langCh unselectable">MAPS</h2>
-				<div class="searchbtn dib">&#128270;</div>
-				<div class="menuaction dib">&#x1F7C8;</div>
-				<div class="oneaction dib">&#9889;</div>
+				<div class="flexGroup">
+					<h2 class="dib langCh unselectable fpCont">MAPS</h2>
+					<div class="searchbtn dib unselectable">&#128270;</div>
+					<div class="menuaction dib unselectable">&#x1F7C8;</div>
+					<div class="oneaction dib unselectable">&#9889;</div>
+					<div class="setupBtn dib unselectable">&#9851;</div>					
+				</div>
 				<div class="searchdlg list-group hide">
 					<div href="#" class="list-group-item custom">
 						<h4 class="list-group-item-heading"><input type="text" placeholder="Что ищем" class="searchInput text"></h4>
@@ -132,8 +175,8 @@
 				<h2 class="langCh">GROUPS</h2>				
 				<div class="list-group maingroups">
 					<div class="btall">
-						<span class="allon langCh">GROUPS_ALLON</span> /
-						<span class="alloff langCh">GROUPS_ALLOFF</span>
+					<span class="allon langCh">GROUPS_ALLON</span> /
+					<span class="alloff langCh">GROUPS_ALLOFF</span>
 					</div>
 					<div href="#" class="list-group-item">
 						<h4 class="list-group-item-heading"><span class="icon"></span><span class="text langCh">&nbsp;GROUPS_COMMON</span></h4>
@@ -372,4 +415,4 @@
 		<div class="selectpt">
 		</div>
 	</body>
-</html>
+</html>									

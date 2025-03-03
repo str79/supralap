@@ -7,6 +7,7 @@ body{
 	overflow: hidden;
 	font-family: verdana;
 }
+body .unselectable,
 body .unselectable *{
 	user-select:            none;
     -khtml-user-select:     none;
@@ -202,10 +203,11 @@ body .hidden{
 #flyProf {
 	position: absolute;
 	right: 0;
-	top: 2.4em;
+	top: 3.3em;
 	z-index: 1;
 }
-#flyProf .container > h2{
+#flyProf .container .fpCont{
+	margin: 0;
 	cursor: pointer;
 	background: #fff5;
 	-webkit-box-shadow: 0px 0px 8px 0px rgba(255, 255, 255, 0.5);
@@ -313,7 +315,8 @@ body .hidden{
 	padding:0;
 }
 .menuaction,
-.oneaction{
+.oneaction,
+.setupBtn{
 	font-family: Webdings;
 	border: 1px solid white;
 	font-size: 2rem;
@@ -378,10 +381,10 @@ body .hidden{
 	width: fit-content;
 }
 .drawingToolsSetup.active{
-display: inline-flex;
-  background: #fff;
-  border: 1px solid #000;
-  border-radius: .3rem;
+	display: inline-flex;
+	background: #fff;
+	border: 1px solid #000;
+	border-radius: .3rem;
 }
 .drawingToolsSetup .groupGrid{
 	display: grid;
@@ -416,6 +419,34 @@ display: inline-flex;
 .drawingToolsSetup .flexGroup{
 	display: flex;
 	gap: 10px;
+}
+#flyProf .flexGroup{
+	align-items: center;
+	display: flex;
+	gap: 10px;
+	margin-bottom: 0.3em;
+}
+#setupDlg{
+	position: absolute;
+	left: 30%;
+	z-index: 2;
+}
+#setupDlg .gsetup{
+	/*align-items: flex-start;*/
+}
+#setupDlg .list-group-item {
+	display: inline-block;
+	/*margin: 0 auto;*/
+	position: static;
+	
+	display: flex;
+	gap: 5px;
+	justify-content: space-between;	
+	align-items: flex-end;
+}
+#setupDlg .list-group-item .textKeyChange {
+	flex-grow: 1;
+	text-align: right;
 }
 .drawingTools{
 	display: none;
