@@ -46,9 +46,15 @@ body .hide,
 body .hidden{
 	display: none;
 }
+body .mycircle.hide{
+	display: block;
+	position: absolute;
+	opacity: 0;
+}
 #mainpic{
 	cursor: grab;
 	position: relative;
+	touch-action: none;
 }
 #mainpic.active{
 	cursor: grabbing;
@@ -137,11 +143,12 @@ body .hidden{
 	cursor: pointer;
 }
 .helpp {
-	position: absolute;
-	top: 0;
+	position: fixed;
+	top: 0.5em;
 	right: 0;
 	z-index: 2;
 }
+
 .langSelect{
 	float: right;
 	cursor: pointer;
@@ -164,10 +171,6 @@ body .hidden{
 	-webkit-box-shadow: 0px 0px 8px 0px rgba(255, 255, 255, 0.5);
 	-moz-box-shadow: 0px 0px 8px 0px rgba(255, 255, 255, 0.5);
 	box-shadow: 0px 0px 8px 0px rgba(255, 255, 255, 0.5);
-}
-
-.autohist .hide {
-	/*display: block;*/
 }
 .objcirclept{
 	display: none;
@@ -201,9 +204,9 @@ body .hidden{
 	padding: 5px;
 }
 #flyProf {
-	position: absolute;
+	position: fixed;
 	right: 0;
-	top: 3.3em;
+	top: 3.5em;
 	z-index: 1;
 }
 #flyProf .container .fpCont{
@@ -331,6 +334,10 @@ body .hidden{
 	border-bottom: 2px solid #00b;
 	display: inline-block;
 }
+.mapMove{
+	border-bottom: 2px solid #00b;
+	display: inline-block;
+}
 #tmpContMenu{
 	display: inline-block;
 	position: absolute;
@@ -428,8 +435,9 @@ body .hidden{
 }
 #setupDlg{
 	position: absolute;
-	left: 30%;
+	left: 37%;
 	z-index: 2;
+	top:20%;
 }
 #setupDlg .gsetup{
 	/*align-items: flex-start;*/
@@ -509,3 +517,44 @@ body .hidden{
 	background: #fff;
 }
 /* image tools*/
+#flylist .container > h2.tmpSelect{
+	/*outline: 3px solid rgba(42, 115, 46, 0.57);
+	border-radius: 2px;*/
+	-webkit-box-shadow: 0px 0px 8px 5px rgba(39, 198, 48, 0.94);
+	-moz-box-shadow: 0px 0px 8px 5px rgba(39, 198, 48, 0.94);
+	box-shadow: 0px 0px 8px 5px rgba(39, 198, 48, 0.94);	
+}
+.mobile #flyProf{
+	top: 6.6em;
+	position: fixed;
+}
+.mobile .helpp{
+	top: 3.3em;
+	position: fixed;
+}
+body.mobile{
+	/*overflow: auto;	*/
+}
+.mobile #flyProf .mainfly{
+	max-width: 100vw;
+    overflow: scroll;
+	max-height:calc(100vh - 6.6em - 50px)
+}
+.mobile .container{
+	padding: 0;	
+}
+.mobile #flylist{
+	z-index: 3;
+	max-width: 100vw;
+    overflow: scroll;
+	
+}
+.mobile #flylist .maingroups
+	max-height:calc(100vh - 360px - 124px)
+}
+.mobile #flylist .text{
+	white-space: normal;
+}
+.mobile #flyProf .text{
+	white-space: normal;
+}

@@ -3,6 +3,7 @@
 	<head>
 		<meta charset="UTF-8">
 		<title>Supraland maps</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 		<!--jquery-->
 		<script
 		src="https://code.jquery.com/jquery-2.2.4.min.js"
@@ -16,15 +17,6 @@
 		<link rel="stylesheet" href="main.css">
 		<!--route mapping is used-->
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/leader-line/1.0.7/leader-line.min.js"></script>
-		<script>
-			if (detectMob){
-				console.log('загружен мобильный, проверка основных файлов');
-			}
-		 function detectMob() {
-			return ( ( window.innerWidth <= 800 ) && ( window.innerHeight <= 600 ) );
-		}	
-			
-		</script>
 	</head>
 	<body>
 		<div class="gameName hidden">Supraland</div>
@@ -47,7 +39,7 @@
 				<div class="list-group hide">
 					<div href="#" class="list-group-item">
 						<p class="list-group-item-text">
-							v=2.23<br>
+							v=2.238<br>
 							<span class="langCh">
 								HELP_TEXT
 							</span>
@@ -56,35 +48,43 @@
 				</div>
 			</div>			
 		</div>
+		<!-- режимы -->
 		<div id="flycMenu" class="hide">
 			<div href="#" class="list-group-item"> 
 				<h4 class="langCh list-group-item-heading">ACTIONS</h4> 
-				<p class="langCh list-group-item-text" data-action="keymove">
+				<p class="list-group-item-text" data-action="keymove">
 					<span class="icon"></span>
-					ACT_KEYMOVE
+					<span class="langCh subtext">ACT_KEYMOVE</span>
+					<span class="hotkey"></span>
 				</p>
-				<p class="langCh list-group-item-text" data-action="gmove">
+				<p class="list-group-item-text" data-action="gmove">
 					<span class="icon"></span>
-					ACT_GLOBALMOVE
+					<span class="langCh subtext">ACT_GLOBALMOVE</span>
+					<span class="hotkey"></span>
 				</p>
-				<p class="langCh list-group-item-text" data-action="gsize">
+				<p class="list-group-item-text" data-action="gsize">
 					<span class="icon"></span>
-					ACT_GLOBALSIZE
+					<span class="langCh subtext">ACT_GLOBALSIZE</span>
+					<span class="hotkey"></span>
 				</p>
-				<p class="langCh list-group-item-text" data-action="invIndex">
+				<p class="list-group-item-text" data-action="invIndex">
 					<span class="icon"></span>
-					ACT_YONGUP
+					<span class="langCh subtext">ACT_YONGUP</span>
+					<span class="hotkey"></span>
 				</p>
-				<p class="langCh list-group-item-text" data-action="routeShow">
+				<p class="list-group-item-text" data-action="routeShow">
 					<span class="icon"></span>
-					ACT_BUILDROUTE
+					<span class="langCh subtext">ACT_BUILDROUTE</span>
+					<span class="hotkey"></span>
 				</p>
-				<p class="langCh list-group-item-text" data-action="drawLines">
+				<p class="list-group-item-text" data-action="drawLines">
 					<span class="icon"></span>
-					ACT_TEMPGLINES
+					<span class="langCh subtext">ACT_TEMPGLINES</span>
+					<span class="hotkey"></span>
 				</p>
 			</div>		
-		</div>		
+		</div>
+		<!-- быстрые действия -->
 		<div id="flyaoMenu" class="hide">
 			<div href="#" class="list-group-item"> 
 				<h4 class="langCh list-group-item-heading">FASTACT</h4> 
@@ -112,6 +112,10 @@
 					FASTACT_IGNORDEL
 					<span class="runicon"></span>
 				</p>
+				<p class="list-group-item-text flipmaps">
+					<span class="langCh subtext">FASTACT_FLIPMAPS</span>
+					<span class="runicon"></span>
+				</p>
 			</div>		
 		</div>
 		<!-- диалог настройки -->
@@ -119,24 +123,31 @@
 			<div class="container">
 				<div class="list-group gsetup">
 					<div class="list-group-item"  >
-						<!-- .keyL	 -->
 						<span class="textDesc langCh">SETUPDLG_TITLE</span>
-					</div>
-					<div class="list-group-item" data-actionkey="routeShow" >
-						<!-- .keyL	 -->
-						<span class="textDesc langCh">SETUPDLG_ROUTESHOW</span>
-						<span class="textKeyBind">r</span>
-						<span class="textKeyChange unselectable">&#9851;</span>
-					</div>
-					<!-- .keyR	 -->
-					<div class="list-group-item" data-actionkey="drawLines" >
-						<span class="textDesc langCh">SETUPDLG_DRAWLINES</span>
-						<span class="textKeyBind">l</span>
-						<span class="textKeyChange unselectable">&#9851;</span>
 					</div>
 					<div class="list-group-item" data-actionkey="keymove" >
 						<span class="textDesc langCh">SETUPDLG_KEYMOVE</span>
 						<span class="textKeyBind">k</span>
+						<span class="textKeyChange unselectable">&#9851;</span>
+					</div>
+					<div class="list-group-item" data-actionkey="gmove" >
+						<span class="textDesc langCh">SETUPDLG_GMOVE</span>
+						<span class="textKeyBind">m</span>
+						<span class="textKeyChange unselectable">&#9851;</span>
+					</div>
+					<div class="list-group-item" data-actionkey="gsize" >
+						<span class="textDesc langCh">SETUPDLG_GSIZE</span>
+						<span class="textKeyBind">z</span>
+						<span class="textKeyChange unselectable">&#9851;</span>
+					</div>
+					<div class="list-group-item" data-actionkey="routeShow" >
+						<span class="textDesc langCh">SETUPDLG_ROUTESHOW</span>
+						<span class="textKeyBind">r</span>
+						<span class="textKeyChange unselectable">&#9851;</span>
+					</div>
+					<div class="list-group-item" data-actionkey="drawLines" >
+						<span class="textDesc langCh">SETUPDLG_DRAWLINES</span>
+						<span class="textKeyBind">l</span>
 						<span class="textKeyChange unselectable">&#9851;</span>
 					</div>
 					<div class="list-group-item">
@@ -156,7 +167,7 @@
 				</div>
 				<div class="searchdlg list-group hide">
 					<div href="#" class="list-group-item custom">
-						<h4 class="list-group-item-heading"><input type="text" placeholder="Что ищем" class="searchInput text"></h4>
+						<h4 class="list-group-item-heading"><input type="text" name="searchText" placeholder="Что ищем" class="searchInput text"></h4>
 					</div>
 				</div>
 				<div class="list-group mainfly">
@@ -166,8 +177,8 @@
 				</div>
 			</div>
 		</div>
-		<div id="mainpic" class="dib">
-			<img src="" alt="">
+		<div id="mainpic" draggable="false" class="dib">
+			<img draggable="false" src="" alt="">
 		</div>
 		<div id="flylist" class="unselectable">
 			<div class="container">
