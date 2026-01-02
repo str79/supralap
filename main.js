@@ -1882,7 +1882,7 @@ $(document).ready(function() {
 		else{
 			tapTimer = setTimeout(() => {
 				tapCount = 0;
-			}, 300); // Таймаут между кликами
+			}, 200); // Таймаут между кликами
 		}
 		if (event.target.className.indexOf('mycircle')>=0){mapcircle=1;}
 		if (event.shiftKey && mapcircle==1 && !gsize){
@@ -2694,6 +2694,7 @@ $(document).ready(function() {
         <div class="popup-content">
 		<button class="popup-close">&#10006;</button>
 		<div class="popup-text">${cText}</div>
+		<div class="popup-done">✅</div>
         </div>
 		`;
 		
@@ -2705,8 +2706,6 @@ $(document).ready(function() {
 		popup.style.top = `${absoluteY}px`;
 		popup.dataset.id=circleId;
 		//popup.style.transform = `scale(${1/zoom})`; // Компенсируем zoom
-		
-		
 		
 		// Добавляем новое
 		document.body.appendChild(popup);
@@ -2720,6 +2719,13 @@ $(document).ready(function() {
 		popup.style.left = correct.left+'px';
 		popup.style.top = correct.top+'px';
 		}
+		
+		// Обработчик завершения операции
+		//mycircleDblclick(event.target.id);
+		popup.querySelector('.popup-done').addEventListener('click', () => {
+			mycircleDblclick(preId+popup.dataset.id);
+			popup.remove();
+		});
 		
 		// Обработчик закрытия
 		popup.querySelector('.popup-close').addEventListener('click', () => {

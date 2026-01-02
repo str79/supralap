@@ -432,8 +432,8 @@ body .mycircle.hide{
 }
 #setupDlg{
 	/*position: absolute;
-	left: 37%;
-	z-index: 2;
+		left: 37%;
+		z-index: 2;
 	top:20%;*/
 }
 #setupDlg .gsetup{
@@ -562,6 +562,13 @@ body .mycircle.hide{
     word-wrap: break-word;
 }
 
+.popupTitle .popup-done {
+	/*border: 1px solid #ccc;
+	color: green;
+	padding: 2px;*/
+	display: inline-block;
+	cursor: pointer;
+}
 
 /* mobile correct*/
 body.mobile{
@@ -602,7 +609,7 @@ body.mobile{
 	white-space: break-spaces;
 }
 .mobile #flylist .maingroups
-max-height:calc(100vh - 360px - 124px)
+max-height:calc(100vh - 360px - 124px);
 }
 .mobile #flylist .text{
 	white-space: normal;
@@ -610,4 +617,4 @@ max-height:calc(100vh - 360px - 124px)
 
 .mobile #flyProf .text{
 	white-space: normal;
-	}									
+}
