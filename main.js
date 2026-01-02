@@ -2675,7 +2675,7 @@ $(document).ready(function() {
 		if (closeWnd){
 			return;
 		}
-
+		
 		
 		// Получаем позицию точки относительно документа
 		const circleRect = circleElement.getBoundingClientRect();
@@ -2716,15 +2716,27 @@ $(document).ready(function() {
 		popup.style.left = `${absoluteX}px`;
 		popup.style.top = `${absoluteY}px`;
 		if (correct.top!=absoluteY || correct.left!=absoluteX){
-		popup.style.left = correct.left+'px';
-		popup.style.top = correct.top+'px';
+			popup.style.left = correct.left+'px';
+			popup.style.top = correct.top+'px';
 		}
 		
 		// Обработчик завершения операции
 		//mycircleDblclick(event.target.id);
 		popup.querySelector('.popup-done').addEventListener('click', () => {
-			mycircleDblclick(preId+popup.dataset.id);
+			const curId=parseInt(popup.dataset.id);
+			mycircleDblclick(preId+curId);
 			popup.remove();
+			if (typeof(routeShow)!='undefined' && routeShow){
+				const nextid=document.querySelector('#'+preId+(curId+1));
+				//если включены маршруты, открываем новый попап
+				if (nextid!=null){
+					//pointerdown
+					// Простое событие click (если подойдет вместо pointerdown)
+					//const el = document.querySelector('.mycircle');
+					showWndDesc(nextid.title,nextid);
+					//nextid.click(); // Вызовет стандартное событие click					
+				}
+			}
 		});
 		
 		// Обработчик закрытия
@@ -2732,15 +2744,6 @@ $(document).ready(function() {
 			popup.remove();
 		});
 		
-		// Закрытие по клику вне окна
-		/*setTimeout(() => {
-			document.addEventListener('click', function closePopup(e) {
-				if (!popup.contains(e.target) && e.target !== circleElement) {
-					popup.remove();
-					document.removeEventListener('click', closePopup);
-				}
-			});
-		}, 100);*/
 	}	
 	function adjustPosition(x, y, popupWidth, popupHeight) {
 		//Автоматическое позиционирование (чтобы не выходило за экран)
@@ -2755,7 +2758,7 @@ $(document).ready(function() {
 		// Если выходит за нижний край
 		if (y + popupHeight > viewportHeight) {
 			y = viewportHeight - popupHeight;
-		}
+			}
 		
 		return { 'left':x, 'top':y };
 	}	
