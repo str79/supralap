@@ -2727,14 +2727,10 @@ $(document).ready(function() {
 			mycircleDblclick(preId+curId);
 			popup.remove();
 			if (typeof(routeShow)!='undefined' && routeShow){
-				const nextid=document.querySelector('#'+preId+(curId+1));
 				//если включены маршруты, открываем новый попап
+				const nextid=document.querySelector('#'+preId+(curId+1));
 				if (nextid!=null){
-					//pointerdown
-					// Простое событие click (если подойдет вместо pointerdown)
-					//const el = document.querySelector('.mycircle');
 					showWndDesc(nextid.title,nextid);
-					//nextid.click(); // Вызовет стандартное событие click					
 				}
 			}
 		});
