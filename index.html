@@ -39,7 +39,7 @@
 				<div class="list-group hide">
 					<div href="#" class="list-group-item">
 						<p class="list-group-item-text">
-							v=2.238<br>
+							v=2.239<br>
 							<span class="langCh">
 								HELP_TEXT
 							</span>
@@ -48,128 +48,131 @@
 				</div>
 			</div>			
 		</div>
-		<!-- режимы -->
-		<div id="flycMenu" class="hide">
-			<div href="#" class="list-group-item"> 
-				<h4 class="langCh list-group-item-heading">ACTIONS</h4> 
-				<p class="list-group-item-text" data-action="keymove">
-					<span class="icon"></span>
-					<span class="langCh subtext">ACT_KEYMOVE</span>
-					<span class="hotkey"></span>
-				</p>
-				<p class="list-group-item-text" data-action="gmove">
-					<span class="icon"></span>
-					<span class="langCh subtext">ACT_GLOBALMOVE</span>
-					<span class="hotkey"></span>
-				</p>
-				<p class="list-group-item-text" data-action="gsize">
-					<span class="icon"></span>
-					<span class="langCh subtext">ACT_GLOBALSIZE</span>
-					<span class="hotkey"></span>
-				</p>
-				<p class="list-group-item-text" data-action="invIndex">
-					<span class="icon"></span>
-					<span class="langCh subtext">ACT_YONGUP</span>
-					<span class="hotkey"></span>
-				</p>
-				<p class="list-group-item-text" data-action="routeShow">
-					<span class="icon"></span>
-					<span class="langCh subtext">ACT_BUILDROUTE</span>
-					<span class="hotkey"></span>
-				</p>
-				<p class="list-group-item-text" data-action="drawLines">
-					<span class="icon"></span>
-					<span class="langCh subtext">ACT_TEMPGLINES</span>
-					<span class="hotkey"></span>
-				</p>
-			</div>		
-		</div>
-		<!-- быстрые действия -->
-		<div id="flyaoMenu" class="hide">
-			<div href="#" class="list-group-item"> 
-				<h4 class="langCh list-group-item-heading">FASTACT</h4> 
-				<p class="langCh list-group-item-text savemap">
-					FASTACT_SAVEMAP
-					<span class="runicon"></span>
-				</p>
-				<p class="langCh list-group-item-text newprof">
-					FASTACT_NEWEMAP
-					<span class="runicon"></span>
-				</p>
-				<p class="langCh list-group-item-text newgroup">
-					FASTACT_NEWGROUP
-					<span class="runicon"></span>
-				</p>
-				<p class="langCh list-group-item-text newpoint">
-					FASTACT_NEWPOINT
-					<span class="runicon"></span>
-				</p>
-				<p class="langCh list-group-item-text compress">
-					FASTACT_COMPRESS
-					<span class="runicon"></span>
-				</p>
-				<p class="langCh list-group-item-text ignordel">
-					FASTACT_IGNORDEL
-					<span class="runicon"></span>
-				</p>
-				<p class="list-group-item-text flipmaps">
-					<span class="langCh subtext">FASTACT_FLIPMAPS</span>
-					<span class="runicon"></span>
-				</p>
-			</div>		
-		</div>
-		<!-- диалог настройки -->
-		<div id="setupDlg" class="hide">
-			<div class="container">
-				<div class="list-group gsetup">
-					<div class="list-group-item"  >
-						<span class="textDesc langCh">SETUPDLG_TITLE</span>
-					</div>
-					<div class="list-group-item" data-actionkey="keymove" >
-						<span class="textDesc langCh">SETUPDLG_KEYMOVE</span>
-						<span class="textKeyBind">k</span>
-						<span class="textKeyChange unselectable">&#9851;</span>
-					</div>
-					<div class="list-group-item" data-actionkey="gmove" >
-						<span class="textDesc langCh">SETUPDLG_GMOVE</span>
-						<span class="textKeyBind">m</span>
-						<span class="textKeyChange unselectable">&#9851;</span>
-					</div>
-					<div class="list-group-item" data-actionkey="gsize" >
-						<span class="textDesc langCh">SETUPDLG_GSIZE</span>
-						<span class="textKeyBind">z</span>
-						<span class="textKeyChange unselectable">&#9851;</span>
-					</div>
-					<div class="list-group-item" data-actionkey="routeShow" >
-						<span class="textDesc langCh">SETUPDLG_ROUTESHOW</span>
-						<span class="textKeyBind">r</span>
-						<span class="textKeyChange unselectable">&#9851;</span>
-					</div>
-					<div class="list-group-item" data-actionkey="drawLines" >
-						<span class="textDesc langCh">SETUPDLG_DRAWLINES</span>
-						<span class="textKeyBind">l</span>
-						<span class="textKeyChange unselectable">&#9851;</span>
-					</div>
-					<div class="list-group-item">
-						<span class="keysReset langCh">SETUPDLG_RESET</span>
-					</div>
-				</div>			
-			</div>			
-		</div>
 		<div id="flyProf">
 			<div class="container">
 				<div class="flexGroup">
 					<h2 class="dib langCh unselectable fpCont">MAPS</h2>
 					<div class="searchbtn dib unselectable">&#128270;</div>
-					<div class="menuaction dib unselectable">&#x1F7C8;</div>
+					<div class="menuaction dib unselectable">&#x2699;</div>
 					<div class="oneaction dib unselectable">&#9889;</div>
 					<div class="setupBtn dib unselectable">&#9851;</div>					
 				</div>
+				<!-- диалог поиска -->
 				<div class="searchdlg list-group hide">
 					<div href="#" class="list-group-item custom">
 						<h4 class="list-group-item-heading"><input type="text" name="searchText" placeholder="Что ищем" class="searchInput text"></h4>
 					</div>
 				</div>
+			<!-- режимы -->
+			<div id="flycMenu" class="hide">
+				<div href="#" class="list-group-item custom"> 
+					<h4 class="langCh list-group-item-heading">ACTIONS</h4> 
+					<p class="list-group-item-text" data-action="keymove">
+						<span class="icon"></span>
+						<span class="langCh subtext">ACT_KEYMOVE</span>
+						<span class="hotkey"></span>
+					</p>
+					<p class="list-group-item-text" data-action="gmove">
+						<span class="icon"></span>
+						<span class="langCh subtext">ACT_GLOBALMOVE</span>
+						<span class="hotkey"></span>
+					</p>
+					<p class="list-group-item-text" data-action="gsize">
+						<span class="icon"></span>
+						<span class="langCh subtext">ACT_GLOBALSIZE</span>
+						<span class="hotkey"></span>
+					</p>
+					<p class="list-group-item-text" data-action="invIndex">
+						<span class="icon"></span>
+						<span class="langCh subtext">ACT_YONGUP</span>
+						<span class="hotkey"></span>
+					</p>
+					<p class="list-group-item-text" data-action="routeShow">
+						<span class="icon"></span>
+						<span class="langCh subtext">ACT_BUILDROUTE</span>
+						<span class="hotkey"></span>
+					</p>
+					<p class="list-group-item-text" data-action="drawLines">
+						<span class="icon"></span>
+						<span class="langCh subtext">ACT_TEMPGLINES</span>
+						<span class="hotkey"></span>
+					</p>
+				</div>		
+			</div>
+				<!-- быстрые действия -->
+				<div id="flyaoMenu" class="hide">
+					<div href="#" class="list-group-item custom"> 
+						<h4 class="langCh list-group-item-heading">FASTACT</h4> 
+						<p class="langCh list-group-item-text savemap">
+							FASTACT_SAVEMAP
+							<span class="runicon"></span>
+						</p>
+						<p class="langCh list-group-item-text newprof">
+							FASTACT_NEWEMAP
+							<span class="runicon"></span>
+						</p>
+						<p class="langCh list-group-item-text newgroup">
+							FASTACT_NEWGROUP
+							<span class="runicon"></span>
+						</p>
+						<p class="langCh list-group-item-text newpoint">
+							FASTACT_NEWPOINT
+							<span class="runicon"></span>
+						</p>
+						<p class="langCh list-group-item-text compress">
+							FASTACT_COMPRESS
+							<span class="runicon"></span>
+						</p>
+						<p class="langCh list-group-item-text ignordel">
+							FASTACT_IGNORDEL
+							<span class="runicon"></span>
+						</p>
+						<p class="list-group-item-text flipmaps">
+							<span class="langCh subtext">FASTACT_FLIPMAPS</span>
+							<span class="runicon"></span>
+						</p>
+					</div>		
+				</div>
+				<!-- диалог настройки -->
+				<div id="setupDlg" class="hide">
+					<div class="list-group-item custom">
+						<div class="list-group gsetup">
+							<div class="list-group-item custom">
+								<span class="textDesc langCh">SETUPDLG_TITLE</span>
+							</div>
+							<div class="list-group-item" data-actionkey="keymove" >
+								<span class="textDesc langCh">SETUPDLG_KEYMOVE</span>
+								<span class="textKeyBind">k</span>
+								<span class="textKeyChange unselectable">&#9851;</span>
+							</div>
+							<div class="list-group-item" data-actionkey="gmove" >
+								<span class="textDesc langCh">SETUPDLG_GMOVE</span>
+								<span class="textKeyBind">m</span>
+								<span class="textKeyChange unselectable">&#9851;</span>
+							</div>
+							<div class="list-group-item" data-actionkey="gsize" >
+								<span class="textDesc langCh">SETUPDLG_GSIZE</span>
+								<span class="textKeyBind">z</span>
+								<span class="textKeyChange unselectable">&#9851;</span>
+							</div>
+							<div class="list-group-item" data-actionkey="routeShow" >
+								<span class="textDesc langCh">SETUPDLG_ROUTESHOW</span>
+								<span class="textKeyBind">r</span>
+								<span class="textKeyChange unselectable">&#9851;</span>
+							</div>
+							<div class="list-group-item" data-actionkey="drawLines" >
+								<span class="textDesc langCh">SETUPDLG_DRAWLINES</span>
+								<span class="textKeyBind">l</span>
+								<span class="textKeyChange unselectable">&#9851;</span>
+							</div>
+							<div class="list-group-item">
+								<span class="keysReset langCh">SETUPDLG_RESET</span>
+							</div>
+						</div>			
+					</div>			
+				</div>
+			
+				
 				<div class="list-group mainfly">
 					<div href="#" class="list-group-item">
 						<h4 class="list-group-item-heading"><span class="icon"></span><span class="text">&nbsp;Общая группа</span></h4>

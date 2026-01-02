@@ -286,9 +286,7 @@ body .mycircle.hide{
 }
 
 #flycMenu {
-	position: absolute;
-	left: 50%;
-	top: 0;
+	position: relative;
 	z-index: 1;
 }
 #flycMenu .list-group-item-text{
@@ -298,9 +296,7 @@ body .mycircle.hide{
 	background: #c8c8c8;
 }
 #flyaoMenu {
-	position: absolute;
-	left: 50%;
-	top: 0;
+	position: relative;
 	z-index: 1;
 }
 #flyaoMenu .list-group-item{
@@ -428,16 +424,17 @@ body .mycircle.hide{
 	gap: 10px;
 }
 #flyProf .flexGroup{
-	align-items: center;
 	display: flex;
 	gap: 10px;
+	align-items: center;
+	justify-content: end;
 	margin-bottom: 0.3em;
 }
 #setupDlg{
-	position: absolute;
+	/*position: absolute;
 	left: 37%;
 	z-index: 2;
-	top:20%;
+	top:20%;*/
 }
 #setupDlg .gsetup{
 	/*align-items: flex-start;*/
@@ -524,6 +521,52 @@ body .mycircle.hide{
 	-moz-box-shadow: 0px 0px 8px 5px rgba(39, 198, 48, 0.94);
 	box-shadow: 0px 0px 8px 5px rgba(39, 198, 48, 0.94);	
 }
+.popupTitle {
+	position: fixed;
+	background: #fff;
+	max-width: 400px;
+	min-width: 200px;
+	border-radius: 3px;
+	padding: 5px;
+	box-shadow: 4px 6px 8px rgba(0,0,0,0.5);
+	transform-origin: top left; /* Важно для правильного масштабирования */
+	border: 1px solid #777;
+}
+.popupTitle .popup-content {
+    position: relative;
+    padding: 15px;
+}
+
+.popupTitle .popup-close {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    background: #999;
+	cursor: pointer;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+	margin-top: -1px
+}
+
+.popupTitle .popup-text {
+    margin-top: 5px;
+    word-wrap: break-word;
+}
+
+
+/* mobile correct*/
+body.mobile{
+	/*overflow: auto;	*/
+}
 .mobile #flyProf{
 	top: 6.6em;
 	position: fixed;
@@ -532,8 +575,15 @@ body .mycircle.hide{
 	top: 3.3em;
 	position: fixed;
 }
-body.mobile{
-	/*overflow: auto;	*/
+.mobile .helpp .container{
+	display: flex;
+	flex-flow: row-reverse;
+	flex-wrap: wrap;
+	gap:3px;
+}
+/*help*/
+.mobile .helpp h2{
+	align-self: flex-start;
 }
 .mobile #flyProf .mainfly{
 	max-width: 100vw;
@@ -547,14 +597,17 @@ body.mobile{
 	z-index: 3;
 	max-width: 100vw;
     overflow: scroll;
-	
+}
+.mobile .list-group-item-heading{
+	white-space: break-spaces;
 }
 .mobile #flylist .maingroups
-	max-height:calc(100vh - 360px - 124px)
+max-height:calc(100vh - 360px - 124px)
 }
 .mobile #flylist .text{
 	white-space: normal;
 }
+
 .mobile #flyProf .text{
 	white-space: normal;
-}
+	}									

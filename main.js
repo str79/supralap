@@ -30,6 +30,7 @@ $(document).ready(function() {
 	var gTmpArr={}; //старые координаты, при чем множественные, для выделенных точек или для всех точек.
 	var selectedArr=[]; //массив выделенных элементов
 	var historyName; //имя массива истории
+	var settingsName; //название настроек
 	let profSym='@g='; //символ разделитель между профилем и точкой, для истории
 	var preId='mapoint'; //ид перед названием точки
 	var activeongroups=1; //включать ли категории (в начале и при переключении профилей-карт)
@@ -37,7 +38,6 @@ $(document).ready(function() {
 	var histMoveNum; //номер перемещаемого элемента в истории
 	var defaultLang='ru' //язык по дефолту.
 	var langScript; //скрипт языка
-	var settingsName; //название настроек
 	var globhist; //массив истории
 	var globSettings; //массив настроек
 	var mapSettings; //скрипт настроек
@@ -110,13 +110,15 @@ $(document).ready(function() {
 		
 	}
 	function init(){
+		//загрузим стандартную группу из настроек
+		setDefaultProfile();
 		//Загрузка истории
 		loadHistory();
 		//загрузка игнор листа
 		loadGlobIgnore();
 		//Выводим группы
-		$('#flyProf .list-group-item').not('.custom').remove();
-		$('#flyProf .mainfly').append(wrapGroups());
+		$('#flyProf .mainfly .list-group-item').not('.custom').remove();
+		$('#flyProf .mainfly').append(wrapGroups(defaultProfile));
 		//Включаем язык в html
 		document.documentElement.lang=defaultLang;
 		//Включаем язык
@@ -162,9 +164,11 @@ $(document).ready(function() {
 	}
 	function setupSettings(){
 		//установка настроек
+		//язык
 		if ('lang' in globSettings) {
 			defaultLang=globSettings['lang'];
 		}
+		//hotkeys
 		if ('customKeys' in globSettings) {
 			customKeys=globSettings['customKeys'];
 		}
@@ -388,6 +392,10 @@ $(document).ready(function() {
 			sibs.removeClass('active');
 			el.addClass('active');
 			profileIndex=sibs.index(el);
+			//записываем в память текущий профиль
+			globSettings['currentProfile']=self['Profiles'][profileIndex].pointarr;
+			saveSettings()
+			//записываем в память текущий профиль
 			profileSelect(profileIndex);
 			if (typeof(routeShow)!='undefined' && routeShow){
 				//маршрут включен, выключим
@@ -693,11 +701,6 @@ $(document).ready(function() {
 						profileCurrent=null;
 					}
 				}
-				else
-				{
-					//старая версия, оставлено для совместимости
-					profileCurrent=tmparr[1];
-				}
 			}
 			else{
 				profileCurrent=null;
@@ -754,6 +757,7 @@ $(document).ready(function() {
 		newel = $.parseHTML( jQuery.trim(newel.replace(/#number#/gi, num)));
 		newel=$(newel);
 		newel.css({'left':x,'top':y});
+		newel.data('id',num);
 		newel.attr('id',  preId+num );
 		newel.attr('title',  tname );
 		newel.addClass('cg'+onegroup);
@@ -1130,41 +1134,6 @@ $(document).ready(function() {
 		}
 		//console.log(event.keyCode);
 	})
-	$('#flyProf').on('click','.menuaction',function(event){
-		$('#flycMenu').toggleClass('hide').css({'left':$('body').width()-$('#flycMenu').width()-parseInt($('.container').css('padding-right'))-$('.mainfly').width(),'top':$(this).offset().top});
-		$('#flycMenu').on('click',function(){$(this).addClass('hide')});
-	});
-	$('#flyProf').on('click','.oneaction',function(event){
-		$('#flyaoMenu').toggleClass('hide').css({'left':$('body').width()-$('#flyaoMenu').width()-parseInt($('.container').css('padding-right'))-$('.mainfly').width(),'top':$(this).offset().top});
-		$('#flyaoMenu').on('click',function(){$(this).addClass('hide')});
-	});
-	$('#flyProf').on('click','.setupBtn',function(event){
-		$('#setupDlg').toggleClass('hide'); //.css({'left':$('body').width()-$('#flyaoMenu').width()-parseInt($('.container').css('padding-right'))-$('.mainfly').width(),'top':$(this).offset().top});
-		//$('#setupDlg').on('click',function(){$(this).addClass('hide')});
-	});
-	$('#setupDlg .textKeyChange').on('click',function(){
-		//нажали на смену горячей клавиши, включаем режим отлова клавиш
-		var allSibs=$('#setupDlg .list-group-item');
-		var thisGroup=$(this).parent('.list-group-item');
-		//индекс
-		var indexPar=allSibs.index(thisGroup);
-		keyBinging=indexPar;
-		allSibs.removeClass('active');
-		thisGroup.addClass('active');
-		event.preventDefault();
-	});
-	$('#setupDlg .keysReset').on('click',function(){
-		//reset настроек
-		customKeys={};
-		//обновляем внутренние настройки клавиш
-		mergeCustomKeys();
-		//обновляем настройки
-		globSettings['customKeys']=customKeys;
-		saveSettings();
-		//обновляем вид диалогов настройки клавиш
-		setupCustomKeys();
-		event.preventDefault();
-	});
 	$('#flyaoMenu .list-group-item .savemap').on('click',(event)=>{
 		var el=$(event.target);
 		if (!el.hasClass('active')){
@@ -1398,6 +1367,12 @@ $(document).ready(function() {
 			profileSelect(defaultProfile);
 		})
 	});
+	function setDefaultProfile(){
+		//восстановим текущий профиль, переводим название в номер
+		const findNum=self['Profiles'].findIndex(item => item.pointarr === globSettings['currentProfile']);
+		defaultProfile=(findNum!=-1)?findNum:defaultProfile;			
+		profileIndex=defaultProfile;
+	}
 	function drawLinesOff(){
 		//уже не рисуем направляющие линии
 		tmpPointsDx={};
@@ -1882,7 +1857,6 @@ $(document).ready(function() {
 	$('#mainpic').on('touchmove',function(e){
 		if (isDragging) {
 			e.preventDefault(); // Блокируем скролл страницы при движении картинки
-			// Ваш код перемещения картинки (например, через transform)
 		}
 	});
 	$('#mainpic').on('touchend',function(e){
@@ -2683,6 +2657,102 @@ $(document).ready(function() {
 	$('#mainpic').on('mouseenter','.mycircle',function(){
 		lastId=this.id;
 	});
+	$('#mainpic').on('pointerdown','.mycircle',function(){
+		//показываем диалог
+		//const clickElement=this;
+		showWndDesc(this.title,this);
+	});
+	function showWndDesc(cText, circleElement) {
+		let closeWnd=0;
+		//id
+		const circleId=$(circleElement).data('id');
+		
+		if (document.querySelector('.popupTitle')!=null && document.querySelector('.popupTitle').dataset.id==circleId){
+			closeWnd=1;
+		}
+		// Удаляем старые окна
+		document.querySelectorAll('.popupTitle').forEach(el => el.remove());
+		if (closeWnd){
+			return;
+		}
+
+		
+		// Получаем позицию точки относительно документа
+		const circleRect = circleElement.getBoundingClientRect();
+		
+		// Пересчитываем в координаты относительно окна с учетом zoom
+		const zoom = Profiles[profileIndex]?.zoom || 1;
+		const absoluteX = circleRect.left;
+		const absoluteY = circleRect.top;
+		
+		// Создаем всплывающее окно
+		const popup = document.createElement('div');
+		popup.className = 'popupTitle';
+		
+		// Добавляем контент и кнопку закрытия
+		popup.innerHTML = `
+        <div class="popup-content">
+		<button class="popup-close">&#10006;</button>
+		<div class="popup-text">${cText}</div>
+        </div>
+		`;
+		
+		// Позиционируем относительно окна
+		//popup.style.position = 'absolute';
+		//popup.style.marginLeft=circleRect.width+'px'
+		popup.style.marginTop=circleRect.height+'px'
+		popup.style.left = `${absoluteX}px`;
+		popup.style.top = `${absoluteY}px`;
+		popup.dataset.id=circleId;
+		//popup.style.transform = `scale(${1/zoom})`; // Компенсируем zoom
+		
+		
+		
+		// Добавляем новое
+		document.body.appendChild(popup);
+		
+		//корректировка выпадания
+		const poupRect = popup.getBoundingClientRect();
+		const correct=adjustPosition(absoluteX,absoluteY,poupRect.width+circleRect.width,poupRect.height+circleRect.height);
+		popup.style.left = `${absoluteX}px`;
+		popup.style.top = `${absoluteY}px`;
+		if (correct.top!=absoluteY || correct.left!=absoluteX){
+		popup.style.left = correct.left+'px';
+		popup.style.top = correct.top+'px';
+		}
+		
+		// Обработчик закрытия
+		popup.querySelector('.popup-close').addEventListener('click', () => {
+			popup.remove();
+		});
+		
+		// Закрытие по клику вне окна
+		/*setTimeout(() => {
+			document.addEventListener('click', function closePopup(e) {
+				if (!popup.contains(e.target) && e.target !== circleElement) {
+					popup.remove();
+					document.removeEventListener('click', closePopup);
+				}
+			});
+		}, 100);*/
+	}	
+	function adjustPosition(x, y, popupWidth, popupHeight) {
+		//Автоматическое позиционирование (чтобы не выходило за экран)
+		const viewportWidth = window.innerWidth;
+		const viewportHeight = window.innerHeight;
+		
+		// Если попап выходит за правый край
+		if (x + popupWidth > viewportWidth) {
+			x = viewportWidth - popupWidth;
+		}
+		
+		// Если выходит за нижний край
+		if (y + popupHeight > viewportHeight) {
+			y = viewportHeight - popupHeight;
+		}
+		
+		return { 'left':x, 'top':y };
+	}	
 	$('.mycircle').hover(
 		function(){
 			var el=$(this);
@@ -2845,6 +2915,39 @@ $(document).ready(function() {
 	});
 	$('.langSelect .langCh').on('click',function(){
 		$(this).next().toggleClass('hide');
+	});
+	//menuaction
+	$('#flyProf .menuaction').on('click',function(event){
+		$('#flycMenu').toggleClass('hide');
+	});
+	$('#flyProf .oneaction').on('click',function(event){
+		$('#flyaoMenu').toggleClass('hide');
+	});
+	$('#flyProf .setupBtn').on('click',function(event){
+		$('#setupDlg').toggleClass('hide');
+	});
+	$('#setupDlg .textKeyChange').on('click',function(){
+		//нажали на смену горячей клавиши, включаем режим отлова клавиш
+		var allSibs=$('#setupDlg .list-group-item');
+		var thisGroup=$(this).parent('.list-group-item');
+		//индекс
+		var indexPar=allSibs.index(thisGroup);
+		keyBinging=indexPar;
+		allSibs.removeClass('active');
+		thisGroup.addClass('active');
+		event.preventDefault();
+	});
+	$('#setupDlg .keysReset').on('click',function(){
+		//reset настроек
+		customKeys={};
+		//обновляем внутренние настройки клавиш
+		mergeCustomKeys();
+		//обновляем настройки
+		globSettings['customKeys']=customKeys;
+		saveSettings();
+		//обновляем вид диалогов настройки клавиш
+		setupCustomKeys();
+		event.preventDefault();
 	});
 	//searchbtn
 	$('.searchbtn').on('click',function(){
@@ -3062,4 +3165,4 @@ $(document).ready(function() {
 	function detectMob() {
 		return ( ( window.innerWidth <= 800 ));
 	}
-});
+});		
