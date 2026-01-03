@@ -524,7 +524,7 @@ body .mycircle.hide{
 .popupTitle {
 	position: fixed;
 	background: #fff;
-	max-width: 400px;
+	max-width: 350px;
 	min-width: 200px;
 	border-radius: 3px;
 	padding: 5px;

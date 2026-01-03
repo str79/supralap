@@ -1683,7 +1683,6 @@ $(document).ready(function() {
 	function GetCurRoute(){
 		//вычитаем игнор лист
 		var ignoreList=[];
-		//.not('#mapoint2,#mapoint3')
 		//игнор лист
 		if (globIgnore && globIgnore.length){
 			globIgnore.forEach(function(element){  let arrelem=element.split(profSym);if (arrelem[1]==self['Profiles'][profileIndex].pointarr){ ignoreList.push('#'+preId+arrelem[0]);} });
@@ -2660,7 +2659,9 @@ $(document).ready(function() {
 	$('#mainpic').on('pointerdown','.mycircle',function(){
 		//показываем диалог
 		//const clickElement=this;
+		if (detMob){
 		showWndDesc(this.title,this);
+		}
 	});
 	function showWndDesc(cText, circleElement) {
 		let closeWnd=0;
@@ -2721,15 +2722,21 @@ $(document).ready(function() {
 		}
 		
 		// Обработчик завершения операции
-		//mycircleDblclick(event.target.id);
 		popup.querySelector('.popup-done').addEventListener('click', () => {
 			const curId=parseInt(popup.dataset.id);
 			mycircleDblclick(preId+curId);
 			popup.remove();
+			//если включены маршруты, открываем новый попап
 			if (typeof(routeShow)!='undefined' && routeShow){
-				//если включены маршруты, открываем новый попап
-				const nextid=document.querySelector('#'+preId+(curId+1));
+				//ищем новый ид по маршрутам	
+				const routes=GetCurRoute();
+				let nextid=null;
+				if (routes.curRoute.length>1){
+					nextid=routes.curRoute[1];
+				}
+				//centerOnMap($('#'+$(this).data('id')));
 				if (nextid!=null){
+					centerOnMap($(nextid));
 					showWndDesc(nextid.title,nextid);
 				}
 			}
@@ -2754,7 +2761,13 @@ $(document).ready(function() {
 		// Если выходит за нижний край
 		if (y + popupHeight > viewportHeight) {
 			y = viewportHeight - popupHeight;
-			}
+		}
+		
+		// Если выходит за левый край
+		if (x < 10) x = 10;
+		
+		// Если выходит за верхний край
+		if (y < 10) y = 10;		
 		
 		return { 'left':x, 'top':y };
 	}	
