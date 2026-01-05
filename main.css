@@ -526,6 +526,7 @@ body .mycircle.hide{
 	background: #fff;
 	max-width: 350px;
 	min-width: 200px;
+	max-height:90vh;
 	border-radius: 3px;
 	padding: 5px;
 	box-shadow: 4px 6px 8px rgba(0,0,0,0.5);
