@@ -2782,420 +2782,421 @@ $(document).ready(function() {
 		if (x < 10) x = 10;
 		
 		// Если выходит за верхний край
-	if (y < 10) y = 10;		
-	
-	return { 'left':x, 'top':y };
+		if (y < 10) y = 10;		
+		
+		return { 'left':x, 'top':y };
 	}	
 	$('.mycircle').hover(
-	function(){
-	var el=$(this);
-	el.addClass('highlight');
-	},
-	function(){
-	var el=$(this);
-	el.removeClass('highlight');
-	}
+		function(){
+			var el=$(this);
+			el.addClass('highlight');
+		},
+		function(){
+			var el=$(this);
+			el.removeClass('highlight');
+		}
 	);
 	$('.btall').on('click',function(e){
-	var par=$('.list-group');
-	var el=$(e.target);
-	if (el.hasClass('langNow')){
-	//ошибка, не тот уровень
-	//el=el.parent();
-	el=el.parents('.allon, .alloff');
-	}
-	if (el.hasClass('allon')){
-	//active all
-	var lhead=par.find('.list-group-item-heading').addClass('active');
-	var ltext=par.find('.list-group-item-text').addClass('active');
-	$('#mainpic .mycircle').removeClass('hide');
-	}
-	else if (el.hasClass('alloff'))
-	{
-	//deactivate all
-	var lhead=par.find('.list-group-item-heading').removeClass('active');
-	var ltext=par.find('.list-group-item-text').removeClass('active');
-	$('#mainpic .mycircle').addClass('hide');
-	}
-	UpdateCountGr();
+		var par=$('.list-group');
+		var el=$(e.target);
+		if (el.hasClass('langNow')){
+			//ошибка, не тот уровень
+			//el=el.parent();
+			el=el.parents('.allon, .alloff');
+		}
+		if (el.hasClass('allon')){
+			//active all
+			var lhead=par.find('.list-group-item-heading').addClass('active');
+			var ltext=par.find('.list-group-item-text').addClass('active');
+			$('#mainpic .mycircle').removeClass('hide');
+		}
+		else if (el.hasClass('alloff'))
+		{
+			//deactivate all
+			var lhead=par.find('.list-group-item-heading').removeClass('active');
+			var ltext=par.find('.list-group-item-text').removeClass('active');
+			$('#mainpic .mycircle').addClass('hide');
+		}
+		UpdateCountGr();
 	});
 	$('.maingroups').on('click','.list-group-item-heading .icon',function(){
-	var el=$(this);
-	var par=el.parent();
-	var hist=par.parent().hasClass('autohist');
-	var histids=[];
-	let histprof=null;
-	var els=par.parent().find('.list-group-item-text');
-	var act=els.filter('.active').length;
-	var typeactive;
-	if (hist){
-	histprof=els.eq(0).data('prof');
-	}
-	if (els.length==act){
-	typeactive=1;
-	//выбраны все - обнуляем
-	par.removeClass('active');
-	els.removeClass('active');
-	//обнуляем кружки, нужно обнулять только группу
-	els.each(function(){
-	tel=$(this);
-	$('#'+tel.data('id')).addClass('hide');
-	//запоминаем для истории
-	if (hist){
-	histids.push(tel.data('id'));
-	}
-	});
-	}
-	else{
-	typeactive=0;
-	par.addClass('active');
-	if (act==0){
-	//вообще не выбраны - заполняем все
-	els.addClass('active');
-	}
-	else
-	{
-	//выбраны не все - заполняем все
-	els.addClass('active');
-	}
-	//заполняем кружки, нужно отображать только группу
-	els.each(function(){
-	tel=$(this);
-	$('#'+tel.data('id')).removeClass('hide');
-	//запоминаем для истории
-	if (hist){
-	histids.push(tel.data('id'));
-	}
-	});
-	}
-	//if it history - activate/remove other list items and our
-	if (profileIndex==histprof && hist){
-	//console.log(histids);
-	var flylist=$('#flylist .list-group-item-text');
-	if (typeactive){
-	flylist=flylist.filter('.active');
-	//деактивируем
-	flylist.each(function(){
-	if(jQuery.inArray($(this).data('id'), histids) !== -1){
-	$(this).removeClass('active');
-	}
-	});
-	}
-	else
-	{
-	flylist=flylist.not('.active');
-	//активируем
-	flylist.each(function(){
-	if(jQuery.inArray($(this).data('id'), histids) !== -1){
-	$(this).addClass('active');
-	}
-	});
-	}
-	}
-	UpdateCountGr(els.eq(0).data('group'));
+		var el=$(this);
+		var par=el.parent();
+		var hist=par.parent().hasClass('autohist');
+		var histids=[];
+		let histprof=null;
+		var els=par.parent().find('.list-group-item-text');
+		var act=els.filter('.active').length;
+		var typeactive;
+		if (hist){
+			histprof=els.eq(0).data('prof');
+		}
+		if (els.length==act){
+			typeactive=1;
+			//выбраны все - обнуляем
+			par.removeClass('active');
+			els.removeClass('active');
+			//обнуляем кружки, нужно обнулять только группу
+			els.each(function(){
+				tel=$(this);
+				$('#'+tel.data('id')).addClass('hide');
+				//запоминаем для истории
+				if (hist){
+					histids.push(tel.data('id'));
+				}
+			});
+		}
+		else{
+			typeactive=0;
+			par.addClass('active');
+			if (act==0){
+				//вообще не выбраны - заполняем все
+				els.addClass('active');
+			}
+			else
+			{
+				//выбраны не все - заполняем все
+				els.addClass('active');
+			}
+			//заполняем кружки, нужно отображать только группу
+			els.each(function(){
+				tel=$(this);
+				$('#'+tel.data('id')).removeClass('hide');
+				//запоминаем для истории
+				if (hist){
+					histids.push(tel.data('id'));
+				}
+			});
+		}
+		//if it history - activate/remove other list items and our
+		if (profileIndex==histprof && hist){
+			//console.log(histids);
+			var flylist=$('#flylist .list-group-item-text');
+			if (typeactive){
+				flylist=flylist.filter('.active');
+				//деактивируем
+				flylist.each(function(){
+					if(jQuery.inArray($(this).data('id'), histids) !== -1){
+						$(this).removeClass('active');
+					}
+				});
+			}
+			else
+			{
+				flylist=flylist.not('.active');
+				//активируем
+				flylist.each(function(){
+					if(jQuery.inArray($(this).data('id'), histids) !== -1){
+						$(this).addClass('active');
+					}
+				});
+			}
+		}
+		UpdateCountGr(els.eq(0).data('group'));
 	});
 	$('#flylist').on('click','.list-group-item.autohist .list-group-item-text .icondel',function(){
-	//delete from history
-	var par=$(this).parent();
-	var dataid=par.data('id')+profSym+self['Profiles'][profileIndex].pointarr;
-	par.remove();
-	//Проверка
-	if (globhist.includes(dataid)){
-	//удаление из истории
-	var tmpindex = globhist.indexOf(dataid);
-	if (tmpindex > -1) {
-	globhist.splice(tmpindex, 1);
-	}
-	//update history
-	setCookie(historyName,JSON.stringify(globhist),{expires:60*60*24*30,path:'/'})
-	}
+		//delete from history
+		var par=$(this).parent();
+		var dataid=par.data('id')+profSym+self['Profiles'][profileIndex].pointarr;
+		par.remove();
+		//Проверка
+		if (globhist.includes(dataid)){
+			//удаление из истории
+			var tmpindex = globhist.indexOf(dataid);
+			if (tmpindex > -1) {
+				globhist.splice(tmpindex, 1);
+			}
+			//update history
+			setCookie(historyName,JSON.stringify(globhist),{expires:60*60*24*30,path:'/'})
+		}
 	});
 	$('.drawingTools .setColors .mark').on('click',function(){
-	var elmark=$(this);
-	var inputel=elmark.parents('.setColors').find('input[name=setcolors]');
-	inputel.click();
-	inputel.one('change',function(){
-	var elinp=$(this);
-	var color=elinp.val();
-	elmark.data('color',color);
-	elmark.css('background',color);
-	});
+		var elmark=$(this);
+		var inputel=elmark.parents('.setColors').find('input[name=setcolors]');
+		inputel.click();
+		inputel.one('change',function(){
+			var elinp=$(this);
+			var color=elinp.val();
+			elmark.data('color',color);
+			elmark.css('background',color);
+		});
 	});
 	/*$('.drawingTools .setColors .mark').on('click',function(){
-	var elmark=$(this);
-	var inputel=elmark.parents('.setColors').find('input[name=setcolors]');
-	inputel.click();
-	inputel.one('change',function(){
-	var elinp=$(this);
-	var color=elinp.val();
-	elmark.data('color',color);
-	elmark.css('background',color);
-	});
+		var elmark=$(this);
+		var inputel=elmark.parents('.setColors').find('input[name=setcolors]');
+		inputel.click();
+		inputel.one('change',function(){
+		var elinp=$(this);
+		var color=elinp.val();
+		elmark.data('color',color);
+		elmark.css('background',color);
+		});
 	});*/
 	$('.drawingToolsSetup .setOptions .mark').on('click',function(){
-	var elmark=$(this);
-	var inputel=elmark.parents('.setOptions').find('input.setcolors');
-	inputel.click();
-	inputel.one('change',function(){
-	var elinp=$(this);
-	var color=elinp.val();
-	elmark.data('color',color);
-	elmark.css('background',color);
-	});
+		var elmark=$(this);
+		var inputel=elmark.parents('.setOptions').find('input.setcolors');
+		inputel.click();
+		inputel.one('change',function(){
+			var elinp=$(this);
+			var color=elinp.val();
+			elmark.data('color',color);
+			elmark.css('background',color);
+		});
 	});
 	$('.helpp > div > h2').on('click',function(){
-	$(this).next().toggleClass('hide');
+		$(this).next().toggleClass('hide');
 	});
 	$('.langSelect .langCh').on('click',function(){
-	$(this).next().toggleClass('hide');
+		$(this).next().toggleClass('hide');
 	});
 	//menuaction
 	$('#flyProf .menuaction').on('click',function(event){
-	$('#flycMenu').toggleClass('hide');
+		$('#flycMenu').toggleClass('hide');
 	});
 	$('#flyProf .oneaction').on('click',function(event){
-	$('#flyaoMenu').toggleClass('hide');
+		$('#flyaoMenu').toggleClass('hide');
 	});
 	$('#flyProf .setupBtn').on('click',function(event){
-	$('#setupDlg').toggleClass('hide');
+		$('#setupDlg').toggleClass('hide');
 	});
 	$('#setupDlg .textKeyChange').on('click',function(){
-	//нажали на смену горячей клавиши, включаем режим отлова клавиш
-	var allSibs=$('#setupDlg .list-group-item');
-	var thisGroup=$(this).parent('.list-group-item');
-	//индекс
-	var indexPar=allSibs.index(thisGroup);
-	keyBinging=indexPar;
-	allSibs.removeClass('active');
-	thisGroup.addClass('active');
-	event.preventDefault();
+		//нажали на смену горячей клавиши, включаем режим отлова клавиш
+		var allSibs=$('#setupDlg .list-group-item');
+		var thisGroup=$(this).parent('.list-group-item');
+		//индекс
+		var indexPar=allSibs.index(thisGroup);
+		keyBinging=indexPar;
+		allSibs.removeClass('active');
+		thisGroup.addClass('active');
+		event.preventDefault();
 	});
 	$('#setupDlg .keysReset').on('click',function(){
-	//reset настроек
-	customKeys={};
-	//обновляем внутренние настройки клавиш
-	mergeCustomKeys();
-	//обновляем настройки
-	globSettings['customKeys']=customKeys;
-	saveSettings();
-	//обновляем вид диалогов настройки клавиш
-	setupCustomKeys();
-	event.preventDefault();
+		//reset настроек
+		customKeys={};
+		//обновляем внутренние настройки клавиш
+		mergeCustomKeys();
+		//обновляем настройки
+		globSettings['customKeys']=customKeys;
+		saveSettings();
+		//обновляем вид диалогов настройки клавиш
+		setupCustomKeys();
+		event.preventDefault();
 	});
 	//searchbtn
 	$('.searchbtn').on('click',function(){
-	//Поиск
-	$('.searchdlg').toggleClass('hide');
+		//Поиск
+		$('.searchdlg').toggleClass('hide');
 	});
 	$('.searchdlg input').on('keyup',function(event){
-	var countpta,profi,curpta;
-	q=$(this).val().toLowerCase();
-	if (event.keyCode == 13 || q.length>2) {
-	//Поиск
-	var sresult=[];
-	var otresult=[]; //поиск по неактивным профилям
-	if (q.length){
-	$('#mainpic .mycircle').each(function(){
-	if ($(this).attr('title').toLowerCase().indexOf(q)!==-1){
-	objsr={};
-	objsr.profile=profileIndex;
-	objsr.id=$(this).attr('id');
-	sresult.push(objsr);
-	}
-	});
-	//сделаем поиск по неактивным профилям
-	var objotr;
-	for (profi=0;profi<Profiles.length;profi++){
-	if (profileIndex==profi){continue;}
-	curpta=self[Profiles[profi].pointarr];
-	for (i=0;i<curpta.length;i++){
-	//Profiles[profi].pointsarr[i]
-	if (curpta[i].Name.toLowerCase().indexOf(q)!==-1){
-	objotr={};
-	objotr.itext=curpta[i].Name+', '+Profiles[profi].Name+' ('+(i+Profiles[profi].StartIndex)+')'
-	objotr.profile=profi;
-	objotr.id=preId+(i+Profiles[profi].StartIndex);
-	otresult.push(objotr);
-	}
-	}
-	}
-	}
-	//console.log(sresult);
-	//console.log(otresult);
-	if (sresult.length || otresult.length){
-	var sdlgwnd=$(".searchdlg .custom");
-	sdlgwnd.find('.list-group-item-text').remove();
-	var tmplist=$('#tmplist').html();
-	var newid,cce,newel;
-	//sresult.concat(otresult);
-	for (var i=0;i<sresult.length;i++){
-	//cce=$('#'+sresult[i]);
-	//newid=cce.get(0).id;
-	//у нас есть id - берем с маркеров на карте описания
-	newel = $($.parseHTML( jQuery.trim(tmplist.replace(/#text#/gi, $('#'+sresult[i].id).attr('title')+" ("+sresult[i].id+")"))));
-	newel.find('.icon').remove();
-	newel.data('id',sresult[i].id);
-	newel.data('profile',sresult[i].profile);
-	newel.on('click',function(event){
-	var profileCur=$(this).data('profile');
-	var sibs=$('#flyProf .list-group-item');
-	if (profileCur!=profileIndex){
-	sibs.eq(profileCur+1).click();
-	//Выключение истории
-	$('#flylist .autohist .list-group-item-heading .icon').click();
-	}
-	centerOnMap($('#'+$(this).data('id')));
-	});
-	sdlgwnd.append(newel)
-	}
-	for (var i=0;i<otresult.length;i++){
-	newel = $($.parseHTML( jQuery.trim(tmplist.replace(/#text#/gi, otresult[i].itext))));
-	newel.find('.icon').remove();
-	newel.data('id',otresult[i].id);
-	newel.data('profile',otresult[i].profile);
-	newel.on('click',function(event){
-	var profileCur=$(this).data('profile');
-	var sibs=$('#flyProf .list-group-item');
-	if (profileCur!=profileIndex){
-	sibs.eq(profileCur+1).click();
-	//Выключение истории
-	$('#flylist .autohist .list-group-item-heading .icon').click();
-	}
-	centerOnMap($('#'+$(this).data('id')));
-	});
-	sdlgwnd.append(newel)
-	}
-	}
-	}
+		var countpta,profi,curpta;
+		q=$(this).val().toLowerCase();
+		if (event.keyCode == 13 || q.length>2) {
+			//Поиск
+			var sresult=[];
+			var otresult=[]; //поиск по неактивным профилям
+			if (q.length){
+				$('#mainpic .mycircle').each(function(){
+					if ($(this).attr('title').toLowerCase().indexOf(q)!==-1){
+						objsr={};
+						objsr.profile=profileIndex;
+						objsr.id=$(this).attr('id');
+						sresult.push(objsr);
+					}
+				});
+				//сделаем поиск по неактивным профилям
+				var objotr;
+				for (profi=0;profi<Profiles.length;profi++){
+					if (profileIndex==profi){continue;}
+					curpta=self[Profiles[profi].pointarr];
+					for (i=0;i<curpta.length;i++){
+						//Profiles[profi].pointsarr[i]
+						if (curpta[i].Name.toLowerCase().indexOf(q)!==-1){
+							objotr={};
+							objotr.itext=curpta[i].Name+', '+Profiles[profi].Name+' ('+(i+Profiles[profi].StartIndex)+')'
+							objotr.profile=profi;
+							objotr.id=preId+(i+Profiles[profi].StartIndex);
+							otresult.push(objotr);
+						}
+					}
+				}
+			}
+			//console.log(sresult);
+			//console.log(otresult);
+			if (sresult.length || otresult.length){
+				var sdlgwnd=$(".searchdlg .custom");
+				sdlgwnd.find('.list-group-item-text').remove();
+				var tmplist=$('#tmplist').html();
+				var newid,cce,newel;
+				//sresult.concat(otresult);
+				for (var i=0;i<sresult.length;i++){
+					//cce=$('#'+sresult[i]);
+					//newid=cce.get(0).id;
+					//у нас есть id - берем с маркеров на карте описания
+					newel = $($.parseHTML( jQuery.trim(tmplist.replace(/#text#/gi, $('#'+sresult[i].id).attr('title')+" ("+sresult[i].id+")"))));
+					newel.find('.icon').remove();
+					newel.data('id',sresult[i].id);
+					newel.data('profile',sresult[i].profile);
+					newel.on('click',function(event){
+						var profileCur=$(this).data('profile');
+						var sibs=$('#flyProf .list-group-item');
+						if (profileCur!=profileIndex){
+							sibs.eq(profileCur+1).click();
+							//Выключение истории
+							$('#flylist .autohist .list-group-item-heading .icon').click();
+						}
+						centerOnMap($('#'+$(this).data('id')));
+					});
+					sdlgwnd.append(newel)
+				}
+				for (var i=0;i<otresult.length;i++){
+					newel = $($.parseHTML( jQuery.trim(tmplist.replace(/#text#/gi, otresult[i].itext))));
+					newel.find('.icon').remove();
+					newel.data('id',otresult[i].id);
+					newel.data('profile',otresult[i].profile);
+					newel.on('click',function(event){
+						var profileCur=$(this).data('profile');
+						var sibs=$('#flyProf .list-group-item');
+						if (profileCur!=profileIndex){
+							sibs.eq(profileCur+1).click();
+							//Выключение истории
+							$('#flylist .autohist .list-group-item-heading .icon').click();
+						}
+						centerOnMap($('#'+$(this).data('id')));
+					});
+					sdlgwnd.append(newel)
+				}
+			}
+		}
 	})
 	function centerOnMap(el){
-	//+поправка на скролл, скролла нет
-	var btnx=el.get(0).offsetLeft-window.pageXOffset;
-	var btny=el.get(0).offsetTop-window.pageYOffset;
-	var sx=$('body').width();//screen.width;
-	var sy=$('body').height();//screen.height;
-	var mainpic=$('#mainpic');
-	var curscale=1;
-	if (typeof(Profiles[profileIndex].zoom)!=undefined){
-	//
-	curscale=Profiles[profileIndex].zoom;
-	}
-	//расстояние до кнопки когда она уже уменьшилась
-	var bonusbtn=(20*(curscale-1))/2;
-	//((изначальная ширина*scale)-изначальная ширина)/2 - то что вышло за пределы с одного бока
-	//calc(928.5px + 278.25px - (217px * 3.1)-21px )
-	var mapnullw=(mainpic.width()*(curscale-1))/2;
-	var mapnullh=(mainpic.height()*(curscale-1))/2;
-	//и минус пол. кнопки - (20/2
-	$('#mainpic').css('left',sx/2+mapnullw-(btnx*curscale)-bonusbtn-(20/2)+'px');
-	$('#mainpic').css('top',sy/2+mapnullh-(btny*curscale)-bonusbtn-(20/2)+'px');
+		//+поправка на скролл, скролла нет
+		//el.get(0).getBoundingClientRect().left - как window.pageXOffset
+		var btnx=el.get(0).offsetLeft;
+		var btny=el.get(0).offsetTop;
+		var sx=$('body').width();//screen.width;
+		var sy=$('body').height();//screen.height;
+		var mainpic=$('#mainpic');
+		var curscale=1;
+		if (typeof(Profiles[profileIndex].zoom)!=undefined){
+			//
+			curscale=Profiles[profileIndex].zoom;
+		}
+		//расстояние до кнопки когда она уже уменьшилась
+		var bonusbtn=(20*(curscale-1))/2;
+		//((изначальная ширина*scale)-изначальная ширина)/2 - то что вышло за пределы с одного бока
+		//calc(928.5px + 278.25px - (217px * 3.1)-21px )
+		var mapnullw=(mainpic.width()*(curscale-1))/2;
+		var mapnullh=(mainpic.height()*(curscale-1))/2;
+		//и минус пол. кнопки - (20/2
+		$('#mainpic').css('left',sx/2+mapnullw-(btnx*curscale)-bonusbtn-(20/2)+'px');
+		$('#mainpic').css('top',sy/2+mapnullh-(btny*curscale)-bonusbtn-(20/2)+'px');
 	}
 	//Очистка истории
 	$('.maingroups').on('click','.list-group-item.autohist h4',function(event){
-	if (event.altKey){
-	globhist=[];
-	//update history
-	setCookie(historyName,JSON.stringify(globhist),{expires:60*60*24*30,path:'/'})
-	//также надо удалить метки
-	$('.maingroups .list-group-item.autohist .list-group-item-text').remove();
-	}
+		if (event.altKey){
+			globhist=[];
+			//update history
+			setCookie(historyName,JSON.stringify(globhist),{expires:60*60*24*30,path:'/'})
+			//также надо удалить метки
+			$('.maingroups .list-group-item.autohist .list-group-item-text').remove();
+		}
 	});
 	//работа с куками
 	function getCookie(name) {
-	//устаревшее
-	matches=[];
-	matches[1]=localStorage.getItem(name);
-	ret=matches ? decodeURIComponent(matches[1]) : undefined;
-	return ret;
+		//устаревшее
+		matches=[];
+		matches[1]=localStorage.getItem(name);
+		ret=matches ? decodeURIComponent(matches[1]) : undefined;
+		return ret;
 	}
 	function setCookie(name, value, options={expires:60*60*24*30,path:'/'}) {
-	//устаревшее
-	value = encodeURIComponent(value);
-	//document.cookie = updatedCookie;
-	localStorage.setItem(name, value);
+		//устаревшее
+		value = encodeURIComponent(value);
+		//document.cookie = updatedCookie;
+		localStorage.setItem(name, value);
 	}
 	function deleteCookie(name) {
-	localStorage.removeItem(name);
+		localStorage.removeItem(name);
 	}
 	//работа с куками
 	function swapObj(obj) {
-	//меняет значение на ключи
-	return Object.fromEntries(Object.entries(obj).map(([key,value])=>[value,key]));
+		//меняет значение на ключи
+		return Object.fromEntries(Object.entries(obj).map(([key,value])=>[value,key]));
 	}
 	function getKeysArr() {
-	var keys={
-	48:'0',
-	49:'1',
-	50:'2',
-	51:'3',
-	52:'4',
-	53:'5',
-	54:'6',
-	55:'7',
-	56:'8',
-	57:'9',
-	65:'a',
-	66:'b',
-	67:'c',
-	68:'d',
-	69:'e',
-	70:'f',
-	71:'g',
-	72:'h',
-	73:'i',
-	74:'j',
-	75:'k',
-	76:'l',
-	77:'m',
-	78:'n',
-	79:'o',
-	80:'p',
-	81:'q',
-	82:'r',
-	83:'s',
-	84:'t',
-	85:'u',
-	86:'v',
-	87:'w',
-	88:'x',
-	89:'y',
-	90:'z',
-	//open bracket	219
-	219:'[',
-	//close bracket	221
-	221:']',
-	
-	};
-	return keys;
+		var keys={
+			48:'0',
+			49:'1',
+			50:'2',
+			51:'3',
+			52:'4',
+			53:'5',
+			54:'6',
+			55:'7',
+			56:'8',
+			57:'9',
+			65:'a',
+			66:'b',
+			67:'c',
+			68:'d',
+			69:'e',
+			70:'f',
+			71:'g',
+			72:'h',
+			73:'i',
+			74:'j',
+			75:'k',
+			76:'l',
+			77:'m',
+			78:'n',
+			79:'o',
+			80:'p',
+			81:'q',
+			82:'r',
+			83:'s',
+			84:'t',
+			85:'u',
+			86:'v',
+			87:'w',
+			88:'x',
+			89:'y',
+			90:'z',
+			//open bracket	219
+			219:'[',
+			//close bracket	221
+			221:']',
+			
+		};
+		return keys;
 	}
 	function translateKeyChar(keynum){
-	//обратный перевод - из буквы в число
-	var arrkeys=swapObj(getKeysArr());
-	var result='';
-	if (keynum in arrkeys){
-	result=arrkeys[keynum];
-	}
+		//обратный перевод - из буквы в число
+		var arrkeys=swapObj(getKeysArr());
+		var result='';
+		if (keynum in arrkeys){
+			result=arrkeys[keynum];
+		}
 	return result;	}
 	function translateKeyNum(keynum){
-	//перевод клавиш из номера в строку
-	var arrkeys=getKeysArr();
-	var result='';
-	if (keynum in arrkeys){
-	result=arrkeys[keynum];
-	}
-	return result;
+		//перевод клавиш из номера в строку
+		var arrkeys=getKeysArr();
+		var result='';
+		if (keynum in arrkeys){
+			result=arrkeys[keynum];
+		}
+		return result;
 	}
 	function setBaseHref() {
-	let base = document.querySelector('base');
-	const isGitHub = window.location.host.includes('github.io');
-	const repoName = window.location.pathname.split('/')[1] || '';
-	if (isGitHub){
-	let base = document.createElement('base');
-	base.href = `/${repoName}/`;
-	document.head.prepend(base);
-	}
+		let base = document.querySelector('base');
+		const isGitHub = window.location.host.includes('github.io');
+		const repoName = window.location.pathname.split('/')[1] || '';
+		if (isGitHub){
+			let base = document.createElement('base');
+			base.href = `/${repoName}/`;
+			document.head.prepend(base);
+		}
 	}
 	function detectMob() {
-	return ( ( window.innerWidth <= 800 ));
+		return ( ( window.innerWidth <= 800 ));
 	}
-	});			
+});			
