@@ -3073,8 +3073,8 @@ $(document).ready(function() {
 		//el.get(0).getBoundingClientRect().left - как window.pageXOffset
 		var btnx=el.get(0).offsetLeft;
 		var btny=el.get(0).offsetTop;
-		var sx=$('body').width();//screen.width;
-		var sy=$('body').height();//screen.height;
+		var sx=window.innerWidth;//screen.width;
+		var sy=window.innerHeight;//screen.height;
 		var mainpic=$('#mainpic');
 		var curscale=1;
 		if (typeof(Profiles[profileIndex].zoom)!=undefined){

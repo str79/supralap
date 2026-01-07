@@ -54,6 +54,7 @@ body .mycircle.hide{
 #mainpic{
 	cursor: grab;
 	position: relative;
+	transform-origin: center center;
 	touch-action: none;
 }
 #mainpic.active{
