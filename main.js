@@ -2356,6 +2356,7 @@ $(document).ready(function() {
 				$(this).find('.icon').trigger('click');
 			}
 		});
+		UpdateCountGr();
 	}
 	$('#mainpic').dblclick(function(event){
 		if (event.target.className.indexOf('mycircle')>=0){
@@ -2680,7 +2681,8 @@ $(document).ready(function() {
 	$('#mainpic').on('pointerdown','.mycircle',function(){
 		//показываем диалог
 		//const clickElement=this;
-		if (detMob){
+		//показываем диалог только если включен мобильный, либо если включены маршруты
+		if (detMob || (typeof(routeShow)!='undefined' && routeShow) ){
 			showWndDesc(this.title,this);
 		}
 	});
@@ -2753,7 +2755,7 @@ $(document).ready(function() {
 			if (typeof(routeShow)!='undefined' && routeShow){recallWndDesc();}
 		});
 		// Обработчик успешного завершения операции
-		popup.querySelector('.popup-done').addEventListener('click', () => {
+		popup.querySelector('.popup-done').addEventListener('click', (e) => {
 			const popup=e.target.closest('.popupTitle');
 			const curId=parseInt(popup.dataset.id);
 			mycircleDblclick(preId+curId);
