@@ -126,6 +126,8 @@ var langStr={
 	In the action menu, it is now possible to show younger numbers on top of older ones. \
 	<br>\
 	option build a route - builds a route based on points on the map, also writes the last removed point to the beginning \
+	When you first turn it on, it opens a pop-up window where you can either close it or mark the marker as completed (the same as with a double-click) \
+	Also, if you don\'t want to pick up an item now, you can add it to your ignore list (skip it) and pick it up later and continue to follow the current route. \
 	allows you to change the size using the [] keys \
 	<br> \
 	Drawing lines - turns on the line drawing mode, click on the map - first point, then interactively click on the desired location of second point, \

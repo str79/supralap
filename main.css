@@ -566,10 +566,21 @@ body .mycircle.hide{
 
 .popupTitle .popup-done {
 	/*border: 1px solid #ccc;
-	color: green;
+		color: green;
 	padding: 2px;*/
 	display: inline-block;
 	cursor: pointer;
+}
+.popupTitle .btns{
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+.popupTitle .btns div{
+	cursor: pointer;
+}
+.popupTitle .popup-ignore{
+	font-size: 1.2em;
 }
 
 /* mobile correct*/
@@ -596,7 +607,7 @@ body.mobile{
 }
 .mobile #flyProf .mainfly{
 	max-width: 100vw;
-    overflow: scroll;
+	overflow: scroll;
 	max-height:calc(100vh - 6.6em - 50px)
 }
 .mobile .container{
@@ -605,10 +616,10 @@ body.mobile{
 .mobile #flylist{
 	z-index: 3;
 	max-width: 100vw;
-    overflow: scroll;
+	overflow: scroll;
 }
 .mobile .list-group-item-heading{
-	white-space: break-spaces;
+	white-space: pre-wrap;
 }
 .mobile #flylist .maingroups
 max-height:calc(100vh - 360px - 124px);
@@ -619,4 +630,11 @@ max-height:calc(100vh - 360px - 124px);
 
 .mobile #flyProf .text{
 	white-space: normal;
+}
+.mobile #flyProf input{
+	width: 100%;
+	max-width: 100%;
+}
+.mobile .list-group{
+	max-height: 80vh;
 }

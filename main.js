@@ -69,8 +69,8 @@ $(document).ready(function() {
 	var usedKeys={};//Ассоциативный массив текущих настроек назначений кнопок
 	var detMob=0;//Мобильное ли устройство
 	var isDragging = false; //события перемещения картинки, для мобильных нажатий, фикс. отмены перетаскивания
-	var tapCount = 0; //к-во нажатий, имитация dbl click для мобильников
-	var tapTimer=null; //тоже таймер для dbl click
+	//var tapCount = 0; //к-во нажатий, имитация dbl click для мобильников
+	//var tapTimer=null; //тоже таймер для dbl click
 	preinit();
 	function preinit(){
 		//определить что мобильный
@@ -1813,23 +1813,29 @@ $(document).ready(function() {
 	$('#tmpContMenu .list-group-item .toIgnore').on('click',function(e){
 		var parentel=$(this).closest('#tmpContMenu');
 		var dataid=parentel.data('itemId');
-		var dataIdFull=dataid+profSym+self['Profiles'][profileIndex].pointarr;
+		//var dataIdFull=dataid+profSym+self['Profiles'][profileIndex].pointarr;
+		//добавление в игнор лист
+		toIgnoreList(dataid);
+		if (typeof(routeShow)!='undefined' && routeShow){
+			//маршрут включен и это двигается центральная картинка или точка маршрута, обновляем позиции
+			//refreshRoute();
+			DeleteRoute();
+			CreateRoute();
+		}
+		event.preventDefault();
+		parentel.addClass('hide');
+	});
+	function toIgnoreList(elId){
+		let dataIdFull=elId+profSym+self['Profiles'][profileIndex].pointarr;
+		//добавление в игнор лист
 		//Проверка
 		if (globIgnore && !globIgnore.includes(dataIdFull)){
 			//добавление в игнор лист
 			globIgnore.push(dataIdFull);
 			//update ignore
 			setCookie(IgnoreName,JSON.stringify(globIgnore),{expires:60*60*24*30,path:'/'})
-			if (typeof(routeShow)!='undefined' && routeShow){
-				//маршрут включен и это двигается центральная картинка или точка маршрута, обновляем позиции
-				//refreshRoute();
-				DeleteRoute();
-				CreateRoute();
-			}
 		}
-		event.preventDefault();
-		parentel.addClass('hide');
-	});
+	}
 	$('#tmpContMenu .list-group-item .delpoint').on('click',function(e){
 		//удаляем точку на карте
 		//старый номер группы
@@ -1881,13 +1887,12 @@ $(document).ready(function() {
 		$('#flycMenu').addClass('hide');
 		$('#flyaoMenu').addClass('hide');
 		//console.log(event);
-		//просто сбор периодичности кликов для имитации dblclick на мобиле
-		tapCount++;
-		if (tapCount === 2) {
+		//просто сбор периодичности кликов для имитации dblclick на мобиле отключить 
+		//tapCount++;
+		/*if (tapCount === 2) {
 			clearTimeout(tapTimer);
 			if ((event.target.className.indexOf('mycircle')>=0) && $('body').hasClass('mobile')){
 				console.log('dblclick');
-				//event.target.trigger('dblclick'); // Аналог dispatchEvent, но в jQuery
 				mycircleDblclick(event.target.id);
 			}
 			tapCount = 0;
@@ -1895,8 +1900,8 @@ $(document).ready(function() {
 		else{
 			tapTimer = setTimeout(() => {
 				tapCount = 0;
-			}, 200); // Таймаут между кликами
-		}
+			}, 300); // Таймаут между кликами
+		}*/
 		if (event.target.className.indexOf('mycircle')>=0){mapcircle=1;}
 		if (event.shiftKey && mapcircle==1 && !gsize){
 			var el=event.target;
@@ -2339,10 +2344,12 @@ $(document).ready(function() {
 	});
 	function mycircleDblclick(newid){
 		//дабл клик по кругу - ищем его id в списке и тыкаем по иконке.
-		//var newid=event.target.id;
 		var flylist;
+		//проверка - скрыт не кликаем
+		if (document.getElementById(newid).classList.contains('hide')){
+			return;
+		}
 		flylist=$('#flylist .list-group-item .list-group-item-text');
-		//console.log(newid);
 		flylist.each(function(){
 			if ($(this).data('id')==newid){
 				//нашли
@@ -2705,13 +2712,10 @@ $(document).ready(function() {
 		popup.className = 'popupTitle';
 		
 		// Добавляем контент и кнопку закрытия
-		popup.innerHTML = `
-        <div class="popup-content">
-		<button class="popup-close">&#10006;</button>
-		<div class="popup-text">${cText}</div>
-		<div class="popup-done">✅</div>
-        </div>
-		`;
+		let newel=document.querySelector('#tmpPopup').innerHTML;
+		let newhtml=jQuery.trim(newel.replace(/#text#/gi, cText));
+		
+		popup.innerHTML = newhtml;
 		
 		// Позиционируем относительно окна
 		//popup.style.position = 'absolute';
@@ -2735,26 +2739,27 @@ $(document).ready(function() {
 			popup.style.top = correct.top+'px';
 		}
 		
-		// Обработчик завершения операции
+		// Обработчик завершения и пропуска
+		popup.querySelector('.popup-ignore').addEventListener('click', (e) => {
+			//console.log(e.target);
+			const popup=e.target.closest('.popupTitle');
+			const curId=parseInt(popup.dataset.id);
+			
+			//добавление в игнор лист
+			toIgnoreList(curId);
+			
+			popup.remove();
+			//если включены маршруты, открываем новый попап
+			if (typeof(routeShow)!='undefined' && routeShow){recallWndDesc();}
+		});
+		// Обработчик успешного завершения операции
 		popup.querySelector('.popup-done').addEventListener('click', () => {
+			const popup=e.target.closest('.popupTitle');
 			const curId=parseInt(popup.dataset.id);
 			mycircleDblclick(preId+curId);
 			popup.remove();
 			//если включены маршруты, открываем новый попап
-			if (typeof(routeShow)!='undefined' && routeShow){
-				//ищем новый ид по маршрутам	
-				const routes=GetCurRoute();
-				let nextid=null;
-				if (routes.curRoute.length>1){
-					nextid=routes.curRoute[1];
-				}
-				if (nextid!=null){
-					centerOnMap($(nextid));
-					DeleteRoute();
-					CreateRoute();
-					showWndDesc(nextid.title,nextid);
-				}
-			}
+			if (typeof(routeShow)!='undefined' && routeShow){recallWndDesc();}
 		});
 		
 		// Обработчик закрытия
@@ -2762,7 +2767,30 @@ $(document).ready(function() {
 			popup.remove();
 		});
 		
-	}	
+	}
+	function recallWndDesc(){
+		//ищем новый ид по маршрутам	
+		const routes=GetCurRoute();
+		let nextid=null;
+		if (routes.curRoute.length>=1){
+			nextid=routes.curRoute[0];
+			if (nextid.classList.contains('hide')){
+				if (routes.curRoute.length>1){
+					nextid=routes.curRoute[1];
+				}
+				else
+				{
+					nextid=null;
+				}
+			}
+		}
+		if (nextid!=null){
+			centerOnMap($(nextid));
+			DeleteRoute();
+			CreateRoute();
+			showWndDesc(nextid.title,nextid);
+		}	
+	}
 	function adjustPosition(x, y, popupWidth, popupHeight) {
 		//Автоматическое позиционирование (чтобы не выходило за экран)
 		const viewportWidth = window.innerWidth;
@@ -3199,4 +3227,4 @@ $(document).ready(function() {
 	function detectMob() {
 		return ( ( window.innerWidth <= 800 ));
 	}
-});			
+});										

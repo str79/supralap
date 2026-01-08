@@ -39,7 +39,7 @@
 				<div class="list-group hide">
 					<div href="#" class="list-group-item">
 						<p class="list-group-item-text">
-							v=2.242<br>
+							v=2.243<br>
 							<span class="langCh">
 								HELP_TEXT
 							</span>
@@ -63,42 +63,42 @@
 						<h4 class="list-group-item-heading"><input type="text" name="searchText" placeholder="Что ищем" class="searchInput text"></h4>
 					</div>
 				</div>
-			<!-- режимы -->
-			<div id="flycMenu" class="hide">
-				<div href="#" class="list-group-item custom"> 
-					<h4 class="langCh list-group-item-heading">ACTIONS</h4> 
-					<p class="list-group-item-text" data-action="keymove">
-						<span class="icon"></span>
-						<span class="langCh subtext">ACT_KEYMOVE</span>
-						<span class="hotkey"></span>
-					</p>
-					<p class="list-group-item-text" data-action="gmove">
-						<span class="icon"></span>
-						<span class="langCh subtext">ACT_GLOBALMOVE</span>
-						<span class="hotkey"></span>
-					</p>
-					<p class="list-group-item-text" data-action="gsize">
-						<span class="icon"></span>
-						<span class="langCh subtext">ACT_GLOBALSIZE</span>
-						<span class="hotkey"></span>
-					</p>
-					<p class="list-group-item-text" data-action="invIndex">
-						<span class="icon"></span>
-						<span class="langCh subtext">ACT_YONGUP</span>
-						<span class="hotkey"></span>
-					</p>
-					<p class="list-group-item-text" data-action="routeShow">
-						<span class="icon"></span>
-						<span class="langCh subtext">ACT_BUILDROUTE</span>
-						<span class="hotkey"></span>
-					</p>
-					<p class="list-group-item-text" data-action="drawLines">
-						<span class="icon"></span>
-						<span class="langCh subtext">ACT_TEMPGLINES</span>
-						<span class="hotkey"></span>
-					</p>
-				</div>		
-			</div>
+				<!-- режимы -->
+				<div id="flycMenu" class="hide">
+					<div href="#" class="list-group-item custom"> 
+						<h4 class="langCh list-group-item-heading">ACTIONS</h4> 
+						<p class="list-group-item-text" data-action="keymove">
+							<span class="icon"></span>
+							<span class="langCh subtext">ACT_KEYMOVE</span>
+							<span class="hotkey"></span>
+						</p>
+						<p class="list-group-item-text" data-action="gmove">
+							<span class="icon"></span>
+							<span class="langCh subtext">ACT_GLOBALMOVE</span>
+							<span class="hotkey"></span>
+						</p>
+						<p class="list-group-item-text" data-action="gsize">
+							<span class="icon"></span>
+							<span class="langCh subtext">ACT_GLOBALSIZE</span>
+							<span class="hotkey"></span>
+						</p>
+						<p class="list-group-item-text" data-action="invIndex">
+							<span class="icon"></span>
+							<span class="langCh subtext">ACT_YONGUP</span>
+							<span class="hotkey"></span>
+						</p>
+						<p class="list-group-item-text" data-action="routeShow">
+							<span class="icon"></span>
+							<span class="langCh subtext">ACT_BUILDROUTE</span>
+							<span class="hotkey"></span>
+						</p>
+						<p class="list-group-item-text" data-action="drawLines">
+							<span class="icon"></span>
+							<span class="langCh subtext">ACT_TEMPGLINES</span>
+							<span class="hotkey"></span>
+						</p>
+					</div>		
+				</div>
 				<!-- быстрые действия -->
 				<div id="flyaoMenu" class="hide">
 					<div href="#" class="list-group-item custom"> 
@@ -171,7 +171,7 @@
 						</div>			
 					</div>			
 				</div>
-			
+				
 				
 				<div class="list-group mainfly">
 					<div href="#" class="list-group-item">
@@ -189,8 +189,8 @@
 				<h2 class="langCh">GROUPS</h2>				
 				<div class="list-group maingroups">
 					<div class="btall">
-					<span class="allon langCh">GROUPS_ALLON</span> /
-					<span class="alloff langCh">GROUPS_ALLOFF</span>
+						<span class="allon langCh">GROUPS_ALLON</span> /
+						<span class="alloff langCh">GROUPS_ALLOFF</span>
 					</div>
 					<div href="#" class="list-group-item">
 						<h4 class="list-group-item-heading"><span class="icon"></span><span class="text langCh">&nbsp;GROUPS_COMMON</span></h4>
@@ -416,6 +416,17 @@
 				<span class="icon"></span>
 				#text#
 			</p>
+		</div>
+		<div id="tmpPopup" class="hide">
+			<div class="popup-content">
+				<button class="popup-close">&#10006;</button>
+				<div class="popup-text">#text#</div>
+				<div class="btns">
+					<div class="popup-done">✅</div>
+					<div class="popup-ignore">&#x25F7;</div>
+					<!--&#x23E9;-->
+				</div>
+			</div>
 		</div>
 		<div id="tmpbtn" class="hide">
 			<div class="mycircle">
