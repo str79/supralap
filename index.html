@@ -39,7 +39,7 @@
 				<div class="list-group hide">
 					<div href="#" class="list-group-item">
 						<p class="list-group-item-text">
-							v=2.243<br>
+							v=2.244<br>
 							<span class="langCh">
 								HELP_TEXT
 							</span>
@@ -196,7 +196,8 @@
 						<h4 class="list-group-item-heading"><span class="icon"></span><span class="text langCh">&nbsp;GROUPS_COMMON</span></h4>
 					</div>
 					<div href="#" class="list-group-item autohist">
-						<h4 class="list-group-item-heading"><span class="icon"></span><span class="text langCh">&nbsp;GROUPS_HISTORY</span></h4>						
+					<!--на самом деле добавляется для всех по шаблону tmpGroup иия берется из профиля, для истории - tmpHistname -->
+						<h4 class="list-group-item-heading"><span class="icon"></span><span class="text langCh">&nbsp;GROUPS_HISTORY</span></h4>
 					</div>
 				</div>
 				<!-- Полотно для инструментов рисования -->
@@ -373,13 +374,26 @@
 				
 			</div>
 		</div>
-		<!-- образец для элемента текста группы -->
+		<!-- образец для элемента текста истории-->
 		<div id="tmpHistname" class="langCh hide">
 			HISTNAME
 		</div>
+		<!-- образец для продолжения элемента истоии (к-вом)-->
+		<div id="tmpHistCount" class="hide">
+			<span class="histCount">
+				(#curcnt#/#mapCnt# | #cnt#/#cntGlob#)
+			</span>
+			<span class="icondelHist"></span>
+			<!--//('+curcnt+'/'+cnt+') -->
+		</div>
+		<!-- образец для элемента группы -->
 		<div id="tmpGroup" class="hide">
 			<div href="#" class="list-group-item">
-				<h4 class="list-group-item-heading"><span class="icon"></span><span class="text">&nbsp;#text#</span></h4>
+				<h4 class="list-group-item-heading">
+				<span class="icon"></span>
+				<span class="text">&nbsp;#text#</span>
+				<span class="tail"></span>
+				</h4>
 			</div>
 		</div>
 		<div id="tmpContGroupMenu" class="hide">
